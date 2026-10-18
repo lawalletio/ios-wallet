@@ -33,7 +33,7 @@ final class L10n: @unchecked Sendable {
 
     private static func read(_ locale: String) -> [String: String] {
         var out: [String: String] = [:]
-        for name in ["wallet", "ios"] {
+        for name in ["wallet", "ios", "ios-onboarding", "ios-payments", "ios-settings"] {
             guard let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: nil, localization: locale)
                 ?? Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "\(locale).lproj"),
                 let data = try? Data(contentsOf: url),

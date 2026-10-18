@@ -13,6 +13,7 @@
 		0CD16125B302698CE5A22B80 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 146D2FA3EE1F11BC12C02CD2 /* Inter.ttf */; };
 		1084F5E2CED020179069AB37 /* wallet.json in Resources */ = {isa = PBXBuildFile; fileRef = 5CA9BD07279E1C967524C23B /* wallet.json */; };
 		111A0F815F0F355845EFC8BC /* OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F0D68EA1D842A598696F5AA /* OFL.txt */; };
+		11A53E1F508BD22393D59822 /* NFCReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D7810B7741E87D044D22A29 /* NFCReader.swift */; };
 		289B6187CEEFCA451DFB0877 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2A5E5BBE978510E118BB42 /* HomeScreen.swift */; };
 		33E837E8586C5F536864A161 /* ActivityScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 483A427C8B3F8514F36CFE05 /* ActivityScreens.swift */; };
 		34034E89BD21480B7AD70EF9 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44EF2FF23EF99FD32A931E8 /* AppModel.swift */; };
@@ -29,6 +30,7 @@
 		C94FC060C2F5875FDDF695BE /* ActivateScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0345F360749D6F7E08DE4CB2 /* ActivateScreen.swift */; };
 		CB56D7B6462C5BD5316AA393 /* sapeee-el-bananero.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 548E6E2675A953E227E5BA89 /* sapeee-el-bananero.mp3 */; };
 		D11BCCFBA3D7FBFE8F37A030 /* ReceiveScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7862821B3D19F09EEE8B8925 /* ReceiveScreens.swift */; };
+		D277EBADA7ECE119224BF320 /* PasskeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C3CA35CA59514B735319231 /* PasskeyService.swift */; };
 		D34380CE6F7C11B0468A9884 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D49E89FB1482FC50CEAF94B /* Components.swift */; };
 		D4C6DA5802821CE0271BBD6D /* treasure-chest.lottie in Resources */ = {isa = PBXBuildFile; fileRef = 7BEB516EC2D5B6B041D2DB63 /* treasure-chest.lottie */; };
 		D535A5BA8B3FA4976265A984 /* LaWalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F664E78FCC8DEDCA5F68AE11 /* LaWalletApp.swift */; };
@@ -70,8 +72,10 @@
 		2E504C9EC16304F2234CDE2D /* WithdrawScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WithdrawScreen.swift; sourceTree = "<group>"; };
 		2EC04CBB95EF7ED6989A0912 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = es.lproj/wallet.json; sourceTree = "<group>"; };
 		34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreens.swift; sourceTree = "<group>"; };
+		3C3CA35CA59514B735319231 /* PasskeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyService.swift; sourceTree = "<group>"; };
 		434481B9E55AEC337BCD0B48 /* LaWallet.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LaWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		483A427C8B3F8514F36CFE05 /* ActivityScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityScreens.swift; sourceTree = "<group>"; };
+		4D7810B7741E87D044D22A29 /* NFCReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCReader.swift; sourceTree = "<group>"; };
 		548E6E2675A953E227E5BA89 /* sapeee-el-bananero.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "sapeee-el-bananero.mp3"; sourceTree = "<group>"; };
 		58BB285926379976399AB169 /* LaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTests.swift; sourceTree = "<group>"; };
 		6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreens.swift; sourceTree = "<group>"; };
@@ -300,7 +304,9 @@
 			isa = PBXGroup;
 			children = (
 				980CE734EBBC38F6E27FC9AC /* Keychain.swift */,
+				4D7810B7741E87D044D22A29 /* NFCReader.swift */,
 				C0389D1EA0BD8D04DF403EA7 /* Notifier.swift */,
+				3C3CA35CA59514B735319231 /* PasskeyService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -479,8 +485,10 @@
 				F086FC3B91DFF2C1F5275C28 /* Keychain.swift in Sources */,
 				80E9B5AE9B64F3AA8C5D275C /* L10n.swift in Sources */,
 				D535A5BA8B3FA4976265A984 /* LaWalletApp.swift in Sources */,
+				11A53E1F508BD22393D59822 /* NFCReader.swift in Sources */,
 				A887DC6F46E9186A76A1DA33 /* Notifier.swift in Sources */,
 				B69D79C2B645B7331AE440DA /* OnboardingScreens.swift in Sources */,
+				D277EBADA7ECE119224BF320 /* PasskeyService.swift in Sources */,
 				A93659BEEC2F1F103BB5D507 /* PaymentReceipt.swift in Sources */,
 				D11BCCFBA3D7FBFE8F37A030 /* ReceiveScreens.swift in Sources */,
 				E9BB3C050007C3823BB3AF0B /* Routes.swift in Sources */,
