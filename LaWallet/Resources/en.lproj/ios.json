@@ -1,0 +1,22 @@
+{
+ "ios.instance.title": "Instance",
+ "ios.instance.subtitle": "The LaWallet community server this app talks to.",
+ "ios.instance.current": "Current instance",
+ "ios.instance.placeholder": "https://beta.lawallet.io",
+ "ios.instance.switch": "Switch instance",
+ "ios.instance.reset": "Use default (beta.lawallet.io)",
+ "ios.instance.invalid": "Enter a valid URL",
+ "ios.instance.switched": "Switched to {name}",
+ "ios.instance.note": "Your Nostr key stays the same. Your Lightning address and wallets belong to each instance.",
+ "ios.notify.received": "Received {sats} sats",
+ "ios.notify.body": "A payment just landed in your wallet.",
+ "ios.nfc.prompt": "Hold your Bolt Card near the top of your iPhone.",
+ "ios.nfc.unavailable": "NFC is not available on this device.",
+ "ios.nfc.tapCard": "Tap a card to pay",
+ "ios.nfc.claimCard": "Claim from a card",
+ "ios.scan.paste": "Paste from clipboard",
+ "ios.scan.permission": "Allow camera access in Settings to scan QR codes.",
+ "ios.scan.openSettings": "Open Settings",
+ "ios.security.revealHint": "Anyone with this key controls your account. Store it somewhere safe.",
+ "ios.common.error": "Something went wrong"
+}

@@ -1,0 +1,22 @@
+{
+ "ios.instance.title": "Instancia",
+ "ios.instance.subtitle": "El servidor de la comunidad LaWallet al que se conecta la app.",
+ "ios.instance.current": "Instancia actual",
+ "ios.instance.placeholder": "https://beta.lawallet.io",
+ "ios.instance.switch": "Cambiar instancia",
+ "ios.instance.reset": "Usar la predeterminada (beta.lawallet.io)",
+ "ios.instance.invalid": "Ingresá una URL válida",
+ "ios.instance.switched": "Conectado a {name}",
+ "ios.instance.note": "Tu clave Nostr sigue siendo la misma. Tu dirección Lightning y tus billeteras pertenecen a cada instancia.",
+ "ios.notify.received": "Recibiste {sats} sats",
+ "ios.notify.body": "Acaba de llegar un pago a tu billetera.",
+ "ios.nfc.prompt": "Acercá tu Bolt Card a la parte superior del iPhone.",
+ "ios.nfc.unavailable": "NFC no está disponible en este dispositivo.",
+ "ios.nfc.tapCard": "Tocá una tarjeta para pagar",
+ "ios.nfc.claimCard": "Reclamar desde una tarjeta",
+ "ios.scan.paste": "Pegar del portapapeles",
+ "ios.scan.permission": "Permití el acceso a la cámara en Ajustes para escanear códigos QR.",
+ "ios.scan.openSettings": "Abrir Ajustes",
+ "ios.security.revealHint": "Quien tenga esta clave controla tu cuenta. Guardala en un lugar seguro.",
+ "ios.common.error": "Algo salió mal"
+}

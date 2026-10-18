@@ -1,0 +1,95 @@
+name: LaWallet
+options:
+  bundleIdPrefix: io.lawallet
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+packages:
+  LaWalletKit:
+    path: Packages/LaWalletKit
+  Lottie:
+    url: https://github.com/airbnb/lottie-spm
+    exactVersion: 4.5.2
+targets:
+  LaWallet:
+    type: application
+    platform: iOS
+    sources:
+      - path: LaWallet
+    dependencies:
+      - package: LaWalletKit
+      - package: Lottie
+    entitlements:
+      path: LaWallet/LaWallet.entitlements
+      properties:
+        com.apple.developer.nfc.readersession.formats: [NDEF, TAG]
+        com.apple.developer.associated-domains:
+          - webcredentials:beta.lawallet.io
+          - applinks:beta.lawallet.io
+    info:
+      path: LaWallet/Info.plist
+      properties:
+        CFBundleDisplayName: LaWallet
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIUserInterfaceStyle: Dark
+        UIAppFonts: [Inter.ttf]
+        ITSAppUsesNonExemptEncryption: false
+        NSCameraUsageDescription: LaWallet uses the camera to scan Lightning invoices, addresses and card activation codes.
+        NFCReaderUsageDescription: LaWallet reads Bolt Cards to claim or pay with them.
+        NSFaceIDUsageDescription: LaWallet uses Face ID to protect your passkey.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [io.lawallet.wallet.refresh]
+        CFBundleURLTypes:
+          - CFBundleURLName: io.lawallet.wallet
+            CFBundleURLSchemes: [lightning, lnurlw, lnurlp, lnurl, lawallet, nostr+walletconnect]
+        com.apple.developer.nfc.readersession.iso7816.select-identifiers: [D2760000850101]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.lawallet.wallet
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+  LaWalletTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [LaWalletTests]
+    dependencies:
+      - target: LaWallet
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.lawallet.wallet.tests
+        GENERATE_INFOPLIST_FILE: YES
+  LaWalletUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [LaWalletUITests]
+    dependencies:
+      - target: LaWallet
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.lawallet.wallet.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: LaWallet
+schemes:
+  LaWallet:
+    build:
+      targets:
+        LaWallet: all
+    test:
+      targets: [LaWalletTests, LaWalletUITests]
+      gatherCoverageData: true
