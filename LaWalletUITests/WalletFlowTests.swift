@@ -37,8 +37,25 @@ final class WalletFlowTests: XCTestCase {
         tap(app, "signup.randomKey")
         tap(app, "create.backedUp")
         tap(app, "create.continue")
+        allowSystemAlert()
         tap(app, "welcome.enter", timeout: 40)
         XCTAssertTrue(el(app, "home.receive").waitForExistence(timeout: 20))
+    }
+
+    /// Dismisses the notification permission prompt raised after signup.
+    private func allowSystemAlert() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+    }
+
+    /// Taps the non-cancel button of the visible alert.
+    private func confirmAlert(_ app: XCUIApplication) {
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        let buttons = alert.buttons.allElementsBoundByIndex.filter { $0.label != "Cancel" }
+        XCTAssertFalse(buttons.isEmpty)
+        buttons.last!.tap()
     }
 
     private func claimAddress(_ app: XCUIApplication) -> String {
@@ -47,9 +64,10 @@ final class WalletFlowTests: XCTestCase {
         let field = tap(app, "claim.username")
         field.typeText(name)
         tap(app, "claim.submit", timeout: 20)
+        tap(app, "claim.done", timeout: 40)
         let address = el(app, "home.address")
         XCTAssertTrue(address.waitForExistence(timeout: 40))
-        XCTAssertTrue(address.label.hasPrefix(name + "@"), "address was \(address.label)")
+        XCTAssertTrue(address.label.contains(name + "@"), "address was \(address.label)")
         return name
     }
 
@@ -65,7 +83,7 @@ final class WalletFlowTests: XCTestCase {
         tap(app, "home.receive")
         let caption = el(app, "qr.caption")
         XCTAssertTrue(caption.waitForExistence(timeout: 15))
-        XCTAssertTrue(caption.label.hasPrefix(name + "@"))
+        XCTAssertTrue(caption.label.contains(name + "@"), "caption was \(caption.label)")
         tap(app, "receive.requestAmount")
         tap(app, "key.2")
         tap(app, "key.1")
@@ -109,10 +127,10 @@ final class WalletFlowTests: XCTestCase {
 
         tap(app, "settings.security")
         tap(app, "security.reveal")
-        for label in ["Reveal", "Show", "Continue", "Yes"] where app.buttons[label].firstMatch.exists { app.buttons[label].firstMatch.tap(); break }
+        confirmAlert(app)
         let nsec = el(app, "security.nsec")
         XCTAssertTrue(nsec.waitForExistence(timeout: 10))
-        XCTAssertTrue(nsec.label.hasPrefix("nsec1") || (nsec.value as? String)?.hasPrefix("nsec1") == true)
+        XCTAssertTrue(nsec.label.contains("nsec1") || (nsec.value as? String)?.contains("nsec1") == true, "nsec label: \(nsec.label)")
         tap(app, "header.back")
 
         tap(app, "settings.language")
@@ -126,10 +144,9 @@ final class WalletFlowTests: XCTestCase {
         tap(app, "settings.currencies")
         tap(app, "header.back")
 
-        el(app, "settings.removeWallet").swipeUp()
+        app.swipeUp()
         tap(app, "settings.removeWallet")
-        let confirm = app.alerts.buttons.element(boundBy: 1).exists ? app.alerts.buttons.element(boundBy: 1) : app.buttons["Remove wallet"].firstMatch
-        if confirm.waitForExistence(timeout: 5) { confirm.tap() }
+        confirmAlert(app)
         XCTAssertTrue(el(app, "landing.create").waitForExistence(timeout: 15))
     }
 

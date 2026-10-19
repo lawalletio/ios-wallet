@@ -108,13 +108,15 @@ struct ScanScreen: View {
                 .buttonStyle(.lw(.secondary))
                 .accessibilityIdentifier("scan.nfc")
             }
-            Button {
-                guard let text = UIPasteboard.general.string, !text.isEmpty else { return app.show(.error, t("scan.unrecognizedQr")) }
-                Task { await handle(text, force: true) }
-            } label: {
-                Label { Text(t("ios.scan.paste")) } icon: { Icon("copy", size: 16) }
+            // PasteButton reads the clipboard without the iOS "Allow Paste" prompt.
+            PasteButton(payloadType: String.self) { strings in
+                guard let text = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
+                Task { @MainActor in await handle(text, force: true) }
             }
-            .buttonStyle(.lw(.secondary))
+            .labelStyle(.titleAndIcon)
+            .buttonBorderShape(.roundedRectangle(radius: 12))
+            .tint(LW.secondary)
+            .frame(maxWidth: .infinity)
             .accessibilityIdentifier("scan.paste")
         }
         .disabled(resolving)

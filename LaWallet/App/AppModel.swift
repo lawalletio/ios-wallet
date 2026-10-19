@@ -167,7 +167,7 @@ final class AppModel {
         persist()
         Keychain.set(method.rawValue, for: "login-method")
         await refreshMe()
-        Notifier.requestAuthorization()
+        if !ProcessInfo.processInfo.arguments.contains("-uitest-reset") { Notifier.requestAuthorization() }
     }
 
     func logout() {

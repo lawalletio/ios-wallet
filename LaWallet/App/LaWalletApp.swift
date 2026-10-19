@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct LaWalletApp: App {
-    @State private var app = AppModel()
+    @State private var app: AppModel
     @Environment(\.scenePhase) private var phase
 
     init() {
@@ -16,6 +16,8 @@ struct LaWalletApp: App {
             UserDefaults.standard.set(instance, forKey: AppModel.instanceKey)
             UserDefaults.standard.removeObject(forKey: AppModel.settingsCacheKey)
         }
+        // Built after the launch overrides above so it reads the right instance.
+        _app = State(initialValue: AppModel())
     }
 
     var body: some Scene {

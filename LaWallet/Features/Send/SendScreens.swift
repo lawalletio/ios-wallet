@@ -60,7 +60,7 @@ struct SendRecipientScreen: View {
             if settled {
                 PayAvatar(url: avatar(for: query), name: query, size: 28)
             }
-            TextField("satoshi@lawallet.ar, lnbc…, lnurl…", text: $value)
+            TextField("", text: $value, prompt: Text(verbatim: "satoshi@lawallet.ar, lnbc…, lnurl…").foregroundStyle(LW.muted))
                 .font(LW.font(16))
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
@@ -79,17 +79,18 @@ struct SendRecipientScreen: View {
                 Button(t("shared.addressInput.change")) { committed = nil; focused = true }
                     .font(LW.font(12, .medium)).foregroundStyle(LW.muted)
             } else if value.isEmpty {
-                Button {
-                    if let s = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty {
+                // PasteButton reads the clipboard without the iOS "Allow Paste" prompt.
+                PasteButton(payloadType: String.self) { strings in
+                    guard let s = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else { return }
+                    Task { @MainActor in
                         value = s.lowercased()
                         focused = false
                     }
-                } label: {
-                    HStack(spacing: 4) { Icon("copy", size: 14); Text(t("ios.pay.paste")) }
-                        .font(LW.font(12, .medium)).foregroundStyle(LW.muted)
-                        .padding(.horizontal, 8).padding(.vertical, 6)
-                        .background(LW.secondary).clipShape(Capsule())
                 }
+                .labelStyle(.titleAndIcon)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .tint(LW.secondary)
                 .accessibilityIdentifier("send.paste")
             }
         }
