@@ -1,5 +1,6 @@
 import AVFoundation
 import LaWalletKit
+import PhotosUI
 import SwiftUI
 
 /// `/wallet/scan` — scan/scan-screen.tsx. Dispatch lives in `ScanRouter`; this screen owns the camera, paste and NFC inputs.
@@ -12,6 +13,7 @@ struct ScanScreen: View {
     @State private var resolving = false
     @State private var foreign: URL?
     @State private var lastCode: (text: String, at: Date)?
+    @State private var photo: PhotosPickerItem?
 
     var body: some View {
         ZStack {
@@ -45,6 +47,7 @@ struct ScanScreen: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .task { await requestCamera() }
+        .onChange(of: photo) { _, item in Task { await scanPhoto(item) } }
         .onDisappear { torch = false }
         .alert(t("scan.differentCommunity"), isPresented: Binding(get: { foreign != nil }, set: { if !$0 { foreign = nil } }), presenting: foreign) { url in
             Button(t("scan.openLink")) { UIApplication.shared.open(url); foreign = nil }
@@ -108,6 +111,12 @@ struct ScanScreen: View {
                 .buttonStyle(.lw(.secondary))
                 .accessibilityIdentifier("scan.nfc")
             }
+            // Works with no camera at all (simulator) and for QR screenshots on a phone.
+            PhotosPicker(selection: $photo, matching: .images) {
+                Label { Text(t("ios.pay.scanPhoto")) } icon: { Icon("image", size: 16) }
+            }
+            .buttonStyle(.lw(camera == .granted ? .secondary : .theme))
+            .accessibilityIdentifier("scan.photo")
             // PasteButton reads the clipboard without the iOS "Allow Paste" prompt.
             PasteButton(payloadType: String.self) { strings in
                 guard let text = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
@@ -153,6 +162,15 @@ struct ScanScreen: View {
         case .notDetermined: camera = await AVCaptureDevice.requestAccess(for: .video) ? .granted : .denied
         default: camera = .denied
         }
+    }
+
+    private func scanPhoto(_ item: PhotosPickerItem?) async {
+        guard let item else { return }
+        defer { photo = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self), let text = QRImageDecoder.decode(data) else {
+            return app.show(.error, t("ios.pay.noQrInPhoto"))
+        }
+        await handle(text, force: true)
     }
 
     private func readCard() async {

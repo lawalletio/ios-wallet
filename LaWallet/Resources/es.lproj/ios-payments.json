@@ -5,8 +5,10 @@
  "ios.pay.expiresIn": "Vence en {time}",
  "ios.pay.expired": "Esta factura venció.",
  "ios.pay.newInvoice": "Nueva factura",
- "ios.pay.noCamera": "Este dispositivo no tiene cámara. Pegá un código o acercá una tarjeta.",
+ "ios.pay.noCamera": "Este dispositivo no tiene cámara disponible (el simulador de iOS no tiene). Escaneá un QR desde una foto, pegá un código o acercá una tarjeta.",
  "ios.pay.torch": "Linterna",
  "ios.pay.claimDisabled": "Reclamar direcciones Lightning está deshabilitado en esta instancia.",
- "scan.unsupported": "Código QR no reconocido"
+ "scan.unsupported": "Código QR no reconocido",
+ "ios.pay.scanPhoto": "Escanear desde foto",
+ "ios.pay.noQrInPhoto": "No se encontró ningún código QR en esa imagen."
 }

@@ -161,6 +161,29 @@ final class WalletFlowTests: XCTestCase {
         XCTAssertTrue(el(app, "home.receive").waitForExistence(timeout: 40))
     }
 
+    /// Hardware-keyboard ↓/↑ moves through the recipient suggestions (wrapping), like the web input.
+    func testSuggestionArrowKeys() throws {
+        let app = launch()
+        createAccount(app)
+        _ = claimAddress(app)
+        tap(app, "home.send", timeout: 40)
+        let input = tap(app, "send.input")
+        input.typeText("satoshi")
+        let options = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'send.option.'"))
+        let first = options.element(boundBy: 0), second = options.element(boundBy: 1)
+        XCTAssertTrue(second.waitForExistence(timeout: 10))
+        let count = options.count
+        input.typeKey(.downArrow, modifierFlags: [])
+        wait(first, timeout: 5, "isSelected == true")
+        input.typeKey(.downArrow, modifierFlags: [])
+        wait(second, timeout: 5, "isSelected == true")
+        XCTAssertFalse(first.isSelected)
+        input.typeKey(.upArrow, modifierFlags: [])
+        wait(first, timeout: 5, "isSelected == true")
+        input.typeKey(.upArrow, modifierFlags: [])  // wraps to the last row
+        wait(options.element(boundBy: count - 1), timeout: 5, "isSelected == true")
+    }
+
     private func faucetLud16() throws -> String {
         var req = URLRequest(url: URL(string: "https://faucet.nwc.dev?balance=100")!)
         req.httpMethod = "POST"

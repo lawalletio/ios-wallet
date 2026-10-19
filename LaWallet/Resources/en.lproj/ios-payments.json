@@ -5,8 +5,10 @@
  "ios.pay.expiresIn": "Expires in {time}",
  "ios.pay.expired": "This invoice expired.",
  "ios.pay.newInvoice": "New invoice",
- "ios.pay.noCamera": "This device has no camera. Paste a code or tap a card instead.",
+ "ios.pay.noCamera": "No camera is available on this device (the iOS Simulator has none). Scan a QR from a photo, paste a code, or tap a card instead.",
  "ios.pay.torch": "Flashlight",
  "ios.pay.claimDisabled": "Claiming Lightning addresses is disabled on this instance.",
- "scan.unsupported": "Unrecognized QR code"
+ "scan.unsupported": "Unrecognized QR code",
+ "ios.pay.scanPhoto": "Scan from photo",
+ "ios.pay.noQrInPhoto": "No QR code found in that image."
 }

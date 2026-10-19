@@ -110,6 +110,22 @@ final class L10nTests: XCTestCase {
         XCTAssertEqual(outcome, .foreignActivation(URL(string: "https://other.example.com/wallet/activate/abc123")!))
     }
 
+    func testSuggestionArrowNavigationWraps() {
+        XCTAssertEqual(SendRecipientScreen.nextIndex(nil, count: 3, direction: 1), 0)
+        XCTAssertEqual(SendRecipientScreen.nextIndex(2, count: 3, direction: 1), 0)
+        XCTAssertEqual(SendRecipientScreen.nextIndex(nil, count: 3, direction: -1), 2)
+        XCTAssertEqual(SendRecipientScreen.nextIndex(0, count: 3, direction: -1), 2)
+        XCTAssertEqual(SendRecipientScreen.nextIndex(1, count: 3, direction: -1), 0)
+        XCTAssertNil(SendRecipientScreen.nextIndex(1, count: 0, direction: 1))
+    }
+
+    func testQRImageDecoderRoundTrip() throws {
+        let text = "lightning:satoshi@lawallet.io"
+        let png = try XCTUnwrap(QRCodeImage.make(text)?.pngData())
+        XCTAssertEqual(QRImageDecoder.decode(png), text)
+        XCTAssertNil(QRImageDecoder.decode(Data("not an image".utf8)))
+    }
+
     @MainActor func testChimeIsValidWAV() {
         let wav = SoundPlayer.chime()
         XCTAssertEqual(String(data: wav.prefix(4), encoding: .ascii), "RIFF")

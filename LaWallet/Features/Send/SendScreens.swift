@@ -5,12 +5,15 @@ import SwiftUI
 
 struct SendRecipientScreen: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.theme) private var theme
     @State private var value = ""
     /// The value last picked from the list; while the field still holds it the list collapses.
     @State private var committed: String?
     @State private var error: String?
     @State private var loading = false
     @State private var contacts: [ContactsStore.Contact] = []
+    /// Row picked with ↑/↓ on a hardware keyboard (web `highlightedOptionIndex`); Enter commits it.
+    @State private var highlighted: Int?
     @FocusState private var focused: Bool
 
     private var query: String { value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
@@ -68,11 +71,18 @@ struct SendRecipientScreen: View {
                 .submitLabel(.go)
                 .focused($focused)
                 .disabled(loading)
-                .onSubmit { Task { await submit(value) } }
+                .onSubmit {
+                    let rows = visible.all
+                    if let i = highlighted, rows.indices.contains(i) { pick(rows[i]) } else { Task { await submit(value) } }
+                }
+                .onKeyPress(.downArrow) { move(1) }
+                .onKeyPress(.upArrow) { move(-1) }
                 .onChange(of: value) { _, next in
                     let lower = next.lowercased()
                     if lower != next { value = lower }
                     error = nil
+                    // An exact match leaves one row: highlight it so Enter commits without an extra ↓.
+                    highlighted = visible.exact && !visible.all.isEmpty ? 0 : nil
                 }
                 .accessibilityIdentifier("send.input")
             if settled {
@@ -101,7 +111,8 @@ struct SendRecipientScreen: View {
 
     // MARK: options
 
-    @ViewBuilder private var options: some View {
+    /// Rows currently listed, in display order (contacts first), as the web's `optionValues`.
+    private var visible: (contacts: [ContactsStore.Contact], suggestions: [String], exact: Bool, all: [String]) {
         let q = query
         let suggestions = LightningSuggestions.build(value, currentDomain: LightningSuggestions.currentDomain(app.me?.lightningAddress))
         let exactContact = contacts.first { $0.address.lowercased() == q }
@@ -111,20 +122,50 @@ struct SendRecipientScreen: View {
         let recent = Array((q.isEmpty ? contacts : contacts.filter { LightningSuggestions.matches($0.address, q) }).prefix(10))
         let shownContacts = isCommitted ? [] : exact ? (exactContact.map { [$0] } ?? []) : recent
         let shownSuggestions = isCommitted ? [] : exact ? (exactContact == nil ? exactSuggestion.map { [$0] } ?? [] : []) : suggestions
+        return (shownContacts, shownSuggestions, exact, shownContacts.map(\.address) + shownSuggestions)
+    }
 
+    /// ↓/↑ with wrap-around (`nextOptionIndex` in lightning-address-input.tsx).
+    private func move(_ direction: Int) -> KeyPress.Result {
+        let count = visible.all.count
+        guard count > 0, !loading else { return .ignored }
+        highlighted = Self.nextIndex(highlighted, count: count, direction: direction)
+        return .handled
+    }
+
+    static func nextIndex(_ current: Int?, count: Int, direction: Int) -> Int? {
+        guard count > 0 else { return nil }
+        if direction > 0 { return current.map { $0 >= count - 1 ? 0 : $0 + 1 } ?? 0 }
+        return current.map { $0 <= 0 || $0 >= count ? count - 1 : $0 - 1 } ?? count - 1
+    }
+
+    private func pick(_ address: String) {
+        value = address
+        committed = address.lowercased()
+        highlighted = nil
+        focused = false
+        Task { await submit(address) }
+    }
+
+    @ViewBuilder private var options: some View {
+        let rows = visible
+        let shownContacts = rows.contacts, shownSuggestions = rows.suggestions
         if !shownContacts.isEmpty || !shownSuggestions.isEmpty {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if !shownContacts.isEmpty {
                         group(t("shared.addressInput.saved")) {
-                            ForEach(shownContacts, id: \.address) { c in
-                                option(c.address, avatar: c.avatar.flatMap(URL.init(string:)) ?? avatar(for: c.address))
+                            ForEach(Array(shownContacts.enumerated()), id: \.element.address) { i, c in
+                                option(c.address, avatar: c.avatar.flatMap(URL.init(string:)) ?? avatar(for: c.address), active: highlighted == i)
                             }
                         }
                     }
                     if !shownSuggestions.isEmpty {
                         group(t("shared.addressInput.suggestions")) {
-                            ForEach(shownSuggestions, id: \.self) { s in option(s, avatar: avatar(for: s)) }
+                            ForEach(Array(shownSuggestions.enumerated()), id: \.element) { i, s in
+                                option(s, avatar: avatar(for: s), active: highlighted == shownContacts.count + i)
+                            }
                         }
                     }
                 }
@@ -132,6 +173,11 @@ struct SendRecipientScreen: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .frame(maxHeight: .infinity, alignment: .top)
+            .onChange(of: highlighted) { _, i in
+                guard let i, rows.all.indices.contains(i) else { return }
+                withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(rows.all[i]) }
+            }
+            }
         } else {
             Color.clear
         }
@@ -144,12 +190,9 @@ struct SendRecipientScreen: View {
         }
     }
 
-    private func option(_ address: String, avatar: URL?) -> some View {
+    private func option(_ address: String, avatar: URL?, active: Bool = false) -> some View {
         Button {
-            value = address
-            committed = address.lowercased()
-            focused = false
-            Task { await submit(address) }
+            pick(address)
         } label: {
             HStack(spacing: 10) {
                 PayAvatar(url: avatar, name: address, size: 28)
@@ -157,13 +200,16 @@ struct SendRecipientScreen: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(LW.card.opacity(0.8))
+            .background(active ? LW.secondary : LW.card.opacity(0.8))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(LW.border.opacity(0.7)))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(active ? theme.preset.t300 : LW.border.opacity(0.7), lineWidth: active ? 1.5 : 1))
             .contentShape(Rectangle())
         }
         .buttonStyle(PressScale())
         .disabled(loading)
+        .id(address)
+        .accessibilityAddTraits(active ? .isSelected : [])
         .accessibilityIdentifier("send.option.\(address)")
     }
 
