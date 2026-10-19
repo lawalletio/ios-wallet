@@ -127,7 +127,7 @@ struct PayAvatar: View {
 
     var body: some View {
         ZStack {
-            LW.background
+            Color.white.opacity(0.08)
             Text(PayAvatar.initials(name)).font(LW.font(max(10, size * 0.3), .medium)).foregroundStyle(LW.muted)
             if let url {
                 AsyncImage(url: url) { phase in
@@ -137,7 +137,7 @@ struct PayAvatar: View {
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .overlay(Circle().strokeBorder(LW.border.opacity(0.7)))
+        .overlay(Circle().strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5))
     }
 }
 
@@ -183,19 +183,17 @@ extension LNURLPayParams {
 struct PayRecipientCard: View {
     let info: PayRecipient
     var body: some View {
-        HStack(spacing: 12) {
-            PayAvatar(url: info.avatar, name: info.name, size: 56)
+        HStack(spacing: 14) {
+            PayAvatar(url: info.avatar, name: info.name, size: 48)
             VStack(alignment: .leading, spacing: 2) {
-                Text(t("send.to").uppercased()).font(LW.font(12, .medium)).tracking(1.6).foregroundStyle(LW.muted)
-                Text(info.name).font(LW.font(16, .semibold)).foregroundStyle(LW.foreground).lineLimit(1)
-                Text(info.subtitle).font(LW.font(12)).foregroundStyle(LW.muted).lineLimit(1).truncationMode(.middle)
+                Text(t("send.to")).font(LW.font(13, .semibold)).foregroundStyle(LW.muted)
+                Text(info.name).font(LW.font(17, .semibold)).foregroundStyle(LW.foreground).lineLimit(1)
+                Text(info.subtitle).font(LW.font(13)).foregroundStyle(LW.muted).lineLimit(1).truncationMode(.middle)
             }
             Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(LW.card.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(LW.border.opacity(0.7)))
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .lwSurface(LW.Radius.surface - 4)
         .accessibilityIdentifier("send.recipient")
     }
 }
@@ -254,9 +252,24 @@ struct PayButtonLabel: View {
     var icon: String?
     var body: some View {
         HStack(spacing: 8) {
-            if busy { ProgressView().controlSize(.small).tint(LW.muted) }
+            if busy { ProgressView().controlSize(.small) }
             if !busy || busyTitle != nil { Text(busy ? busyTitle ?? title : title) }
             if !busy, let icon { Icon(icon, size: 16) }
         }
+    }
+}
+
+/// Pending marker: a small dot with a soft ring that keeps expanding (waiting-for-payment pills).
+struct PulseDot: View {
+    var color: Color = LW.sun
+    @State private var on = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Circle().fill(color).frame(width: 7, height: 7)
+            .background(Circle().fill(color.opacity(0.5)).scaleEffect(on ? 2.8 : 1).opacity(on ? 0 : 0.9))
+            .animation(reduceMotion ? nil : .easeOut(duration: 1.4).repeatForever(autoreverses: false), value: on)
+            .onAppear { on = true }
+            .accessibilityHidden(true)
     }
 }

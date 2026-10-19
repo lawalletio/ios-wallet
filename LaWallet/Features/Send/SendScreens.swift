@@ -21,14 +21,14 @@ struct SendRecipientScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             ScreenHeader(title: t("send.title"), close: true)
-            VStack(alignment: .leading, spacing: 8) {
-                Text(t("send.to")).font(LW.font(14, .medium)).foregroundStyle(LW.foreground)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(t("send.to")).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 4)
                 field
                 if let error {
-                    Text(error).font(LW.font(12)).foregroundStyle(LW.destructiveText).accessibilityIdentifier("error.text")
+                    Text(error).font(LW.font(13)).foregroundStyle(LW.destructiveText).padding(.leading, 4).accessibilityIdentifier("error.text")
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 16)
+            .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 18)
 
             ZStack {
                 if loading {
@@ -59,12 +59,13 @@ struct SendRecipientScreen: View {
     private var settled: Bool { (!focused || committed == query) && Destination.isLightningAddress(query) }
 
     private var field: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             if settled {
-                PayAvatar(url: avatar(for: query), name: query, size: 28)
+                PayAvatar(url: avatar(for: query), name: query, size: 30)
             }
-            TextField("", text: $value, prompt: Text(verbatim: "satoshi@lawallet.ar, lnbc…, lnurl…").foregroundStyle(LW.muted))
+            TextField("", text: $value, prompt: Text(verbatim: "satoshi@lawallet.ar, lnbc…, lnurl…").foregroundStyle(LW.muted.opacity(0.8)))
                 .font(LW.font(16))
+                .foregroundStyle(LW.foreground)
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -86,8 +87,14 @@ struct SendRecipientScreen: View {
                 }
                 .accessibilityIdentifier("send.input")
             if settled {
-                Button(t("shared.addressInput.change")) { committed = nil; focused = true }
-                    .font(LW.font(12, .medium)).foregroundStyle(LW.muted)
+                // A chip, not glass: it sits inside the glass field.
+                Button { committed = nil; focused = true } label: {
+                    Text(t("shared.addressInput.change")).font(LW.font(13, .semibold)).foregroundStyle(LW.foreground.opacity(0.85))
+                        .padding(.horizontal, 12).frame(height: 30)
+                        .background(Color.white.opacity(0.10), in: Capsule())
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(PressScale())
             } else if value.isEmpty {
                 // PasteButton reads the clipboard without the iOS "Allow Paste" prompt.
                 PasteButton(payloadType: String.self) { strings in
@@ -100,13 +107,17 @@ struct SendRecipientScreen: View {
                 .labelStyle(.titleAndIcon)
                 .buttonBorderShape(.capsule)
                 .controlSize(.small)
-                .tint(LW.secondary)
+                .lwSystemGlass()
                 .accessibilityIdentifier("send.paste")
             }
         }
-        .padding(.horizontal, 12).frame(height: 48)
-        .background(LW.background)
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(error == nil ? LW.border : LW.destructiveText.opacity(0.7)))
+        .padding(.leading, settled ? 12 : 16).padding(.trailing, 12).frame(minHeight: 54)
+        .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
+        .overlay {
+            if error != nil {
+                RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous).strokeBorder(LW.destructiveText.opacity(0.7))
+            }
+        }
     }
 
     // MARK: options
@@ -153,7 +164,7 @@ struct SendRecipientScreen: View {
         if !shownContacts.isEmpty || !shownSuggestions.isEmpty {
             ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 20) {
                     if !shownContacts.isEmpty {
                         group(t("shared.addressInput.saved")) {
                             ForEach(Array(shownContacts.enumerated()), id: \.element.address) { i, c in
@@ -169,8 +180,10 @@ struct SendRecipientScreen: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16).padding(.bottom, 16)
+                .padding(.horizontal, 20).padding(.bottom, 20)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
             .scrollDismissesKeyboard(.interactively)
             .frame(maxHeight: .infinity, alignment: .top)
             .onChange(of: highlighted) { _, i in
@@ -184,29 +197,30 @@ struct SendRecipientScreen: View {
     }
 
     private func group<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased()).font(LW.font(10, .medium)).tracking(1.4).foregroundStyle(LW.muted).padding(.leading, 2)
-            VStack(spacing: 4) { content() }
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 4)
+            VStack(spacing: 8) { content() }
         }
     }
 
     private func option(_ address: String, avatar: URL?, active: Bool = false) -> some View {
-        Button {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return Button {
             pick(address)
         } label: {
-            HStack(spacing: 10) {
-                PayAvatar(url: avatar, name: address, size: 28)
-                Text(address).font(LW.font(14)).foregroundStyle(LW.foreground).lineLimit(1).truncationMode(.middle)
+            HStack(spacing: 12) {
+                PayAvatar(url: avatar, name: address, size: 34)
+                Text(address).font(LW.font(15, .medium)).foregroundStyle(LW.foreground).lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 0)
+                Icon(active ? "arrow-right" : "chevron-right", size: 15).foregroundStyle(active ? theme.preset.primary : LW.muted.opacity(0.7))
             }
-            .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(active ? LW.secondary : LW.card.opacity(0.8))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(active ? theme.preset.t300 : LW.border.opacity(0.7), lineWidth: active ? 1.5 : 1))
-            .contentShape(Rectangle())
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .contentShape(shape)
         }
         .buttonStyle(PressScale())
+        // Keyboard highlight (↑/↓): brand-tinted glass plus a brand rim, so it reads at a glance.
+        .lwGlass(in: shape, tint: active ? .color(theme.preset.primary.opacity(0.25)) : .none, interactive: true)
+        .overlay { if active { shape.strokeBorder(theme.preset.primary.opacity(0.85), lineWidth: 1.5) } }
         .disabled(loading)
         .id(address)
         .accessibilityAddTraits(active ? .isSelected : [])
@@ -334,11 +348,13 @@ struct SendAmountScreen: View {
                     PayAmountPad(value: $value)
                     if let p = params, p.maxSendableSats > 0, p.minSendableSats != p.maxSendableSats {
                         Text(t("ios.pay.range", ["min": p.minSendableSats.formatted(), "max": p.maxSendableSats.formatted()]))
-                            .font(LW.font(12)).foregroundStyle(LW.muted)
+                            .font(LW.font(13)).foregroundStyle(LW.muted)
                     }
                 }
-                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 12)
+                .padding(.horizontal, 20).padding(.top, 4).padding(.bottom, 40)  // clears BottomBar's top fade
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
 
@@ -364,13 +380,13 @@ struct SendAmountScreen: View {
     }
 
     private func noteField(max: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            TextField(t("send.amount.notePlaceholder"), text: $note)
-                .font(LW.font(15))
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("", text: $note, prompt: Text(verbatim: t("send.amount.notePlaceholder")).foregroundStyle(LW.muted.opacity(0.8)))
+                .font(LW.font(16))
+                .foregroundStyle(LW.foreground)
                 .textInputAutocapitalization(.sentences)
-                .padding(.horizontal, 14).frame(height: 44)
-                .background(LW.background)
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+                .padding(.horizontal, 16).frame(minHeight: 54)
+                .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
                 .onChange(of: note) { _, next in if next.count > max { note = String(next.prefix(max)) } }
                 .accessibilityLabel(t("send.amount.noteAria"))
                 .accessibilityIdentifier("send.amount.note")
@@ -381,7 +397,7 @@ struct SendAmountScreen: View {
                     .monospacedDigit()
                     .foregroundStyle(note.count >= max ? LW.foreground : LW.muted)
             }
-            .font(LW.font(12)).foregroundStyle(LW.muted).padding(.horizontal, 2)
+            .font(LW.font(12)).foregroundStyle(LW.muted).padding(.horizontal, 6)
         }
     }
 
@@ -417,14 +433,17 @@ struct SendPreviewScreen: View {
         VStack(spacing: 0) {
             ScreenHeader(title: t("send.previewTitle"))
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     summaryCard(flows)
                     quotePanel(flows)
+                    equivalents(flows)
                     if let error { Text(error).font(LW.font(14)).foregroundStyle(LW.destructiveText).multilineTextAlignment(.center)
                         .accessibilityIdentifier("send.preview.error") }
                 }
-                .padding(16)
+                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 20)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
             BottomBar {
                 SwipeButton(label: quote == .loading ? t("send.preview.quotingPayment") : t("send.preview.swipeToPay"), loading: paying) {
                     Task { await pay() }
@@ -453,55 +472,46 @@ struct SendPreviewScreen: View {
         let noteOmitted: Bool = if case .ready(let q) = quote { !flows.sendComment.isEmpty && q.comment == nil } else { false }
         let shownSats: Int = if case .ready(let q) = quote { q.amountSats } else { flows.sendAmountSats }
         return VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                Text(t("send.preview.sending").uppercased()).font(LW.font(12, .medium)).tracking(2.6).foregroundStyle(LW.muted)
+            VStack(spacing: 10) {
+                Text(t("send.preview.sending")).font(LW.font(15, .semibold)).foregroundStyle(LW.muted)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(shownSats.formatted()).font(LW.font(60, .semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.4)
-                    Text("sats").font(LW.font(20, .semibold)).foregroundStyle(LW.muted)
+                    Text(shownSats.formatted()).font(LW.font(60, .semibold)).tracking(-2).monospacedDigit()
+                        .lineLimit(1).minimumScaleFactor(0.4)
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: shownSats)
+                    Text("sats").font(LW.font(20, .medium)).foregroundStyle(LW.muted)
                 }
                 .accessibilityIdentifier("send.preview.amount")
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 20).padding(.top, 24).padding(.bottom, 28)
+            .padding(.horizontal, 20).padding(.top, 28).padding(.bottom, 26)
 
             if let info {
-                VStack(spacing: 16) {
-                    HStack(spacing: 12) {
-                        PayAvatar(url: info.avatar, name: info.name, size: 64)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(t("send.to").uppercased()).font(LW.font(12, .medium)).tracking(2).foregroundStyle(LW.muted)
-                            Text(info.name).font(LW.font(20, .semibold)).lineLimit(1)
-                            Text(info.subtitle).font(LW.font(14)).foregroundStyle(LW.muted).lineLimit(1).truncationMode(.middle)
-                        }
-                        Spacer(minLength: 0)
+                RowDivider()
+                HStack(spacing: 14) {
+                    PayAvatar(url: info.avatar, name: info.name, size: 52)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("send.to")).font(LW.font(13, .semibold)).foregroundStyle(LW.muted)
+                        Text(info.name).font(LW.font(18, .semibold)).lineLimit(1)
+                        Text(info.subtitle).font(LW.font(14)).foregroundStyle(LW.muted).lineLimit(1).truncationMode(.middle)
                     }
-                    VStack(spacing: 12) {
-                        detailRow(t("send.preview.type"), kindLabel(flows.destination))
-                        if let acceptedNote {
-                            Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
-                            detailRow(t("send.note"), acceptedNote)
-                        } else if noteOmitted {
-                            Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
-                            Text(t("send.preview.noteOmitted")).font(LW.font(12)).foregroundStyle(LW.muted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .padding(12)
-                    .background(LW.card.opacity(0.7)).clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.border.opacity(0.7)))
+                    Spacer(minLength: 0)
                 }
-                .padding(16)
-                .background(LW.background.opacity(0.35))
-                .overlay(alignment: .top) { Rectangle().fill(LW.border.opacity(0.7)).frame(height: 1) }
+                .padding(.horizontal, 18).padding(.vertical, 16)
+                RowDivider()
+                detailRow(t("send.preview.type"), kindLabel(flows.destination))
+                if let acceptedNote {
+                    RowDivider()
+                    detailRow(t("send.note"), acceptedNote)
+                } else if noteOmitted {
+                    RowDivider()
+                    Text(t("send.preview.noteOmitted")).font(LW.font(13)).foregroundStyle(LW.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18).padding(.vertical, 14)
+                }
             }
         }
-        .background(LW.card)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(LW.border))
-        .overlay(alignment: .top) {
-            LinearGradient(colors: [.clear, theme.preset.t300, .clear], startPoint: .leading, endPoint: .trailing).frame(height: 1)
-        }
-        .shadow(color: .black.opacity(0.24), radius: 30, y: 20)
+        .lwSurface()
     }
 
     private func quotePanel(_ flows: FlowState) -> some View {
@@ -511,53 +521,53 @@ struct SendPreviewScreen: View {
         case .failed: t("send.preview.feeUnavailable")
         case .ready: t("send.preview.feeNotQuoted")
         }
-        return VStack(alignment: .leading, spacing: 16) {
-            HStack {
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(t("send.preview.quote").uppercased()).font(LW.font(12, .medium)).tracking(2).foregroundStyle(LW.muted)
-                    Text(t("send.preview.beforeSending")).font(LW.font(14, .medium))
+                    Text(t("send.preview.quote")).font(LW.font(13, .semibold)).foregroundStyle(LW.muted)
+                    Text(t("send.preview.beforeSending")).font(LW.font(16, .semibold))
                 }
                 Spacer()
                 statusChip
             }
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 quoteLine(t("send.preview.amount"), t("common.sats", ["n": amount.formatted()]))
-                Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
+                RowDivider().padding(.leading, -4)
                 quoteLine(t("send.networkFee"), feeText, muted: true)
-                Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
+                RowDivider().padding(.leading, -4)
                 quoteLine(t("send.preview.total"), t("send.preview.plusFee", ["amount": amount.formatted()]), strong: true)
             }
-            .padding(12)
-            .background(LW.background.opacity(0.35)).clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.border.opacity(0.7)))
+            .lwInset(LW.Radius.control - 4)
 
             switch quote {
-            case .ready: Text(t("send.preview.feeQuoteUnavailable")).font(LW.font(12)).foregroundStyle(LW.muted)
-            case .failed(let m): Text(m).font(LW.font(12)).foregroundStyle(LW.destructiveText).accessibilityIdentifier("send.preview.quoteError")
+            case .ready: Text(t("send.preview.feeQuoteUnavailable")).font(LW.font(13)).foregroundStyle(LW.muted)
+            case .failed(let m): Text(m).font(LW.font(13)).foregroundStyle(LW.destructiveText).accessibilityIdentifier("send.preview.quoteError")
             case .loading: EmptyView()
             }
+        }
+        .padding(18)
+        .lwSurface()
+    }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(t("send.preview.equivalents").uppercased()).font(LW.font(12, .medium)).tracking(1.8).foregroundStyle(LW.muted)
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                    ForEach(app.currencies.active, id: \.self) { code in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(code == "SAT" ? "sats" : code).font(LW.font(10, .semibold)).foregroundStyle(LW.muted)
-                            Text(Self.equivalent(amount, code, app.currencies.rates)).font(LW.font(14, .semibold)).monospacedDigit()
-                                .lineLimit(1).minimumScaleFactor(0.6)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10).padding(.vertical, 8)
-                        .background(LW.background.opacity(0.3)).clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border.opacity(0.6)))
+    /// One small glass chip per active currency, outside the quote surface (no glass on glass).
+    private func equivalents(_ flows: FlowState) -> some View {
+        let amount: Int = if case .ready(let q) = quote { q.amountSats } else { flows.sendAmountSats }
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(t("send.preview.equivalents")).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 4)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(app.currencies.active, id: \.self) { code in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(code == "SAT" ? "sats" : code).font(LW.font(12, .semibold)).foregroundStyle(LW.muted)
+                        Text(Self.equivalent(amount, code, app.currencies.rates)).font(LW.font(15, .semibold)).monospacedDigit()
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                            .contentTransition(.numericText())
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12).padding(.vertical, 10)
+                    .lwGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
         }
-        .padding(16)
-        .background(LW.card.opacity(0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(LW.border.opacity(0.8)))
     }
 
     @ViewBuilder private var statusChip: some View {
@@ -565,14 +575,16 @@ struct SendPreviewScreen: View {
         case .loading:
             HStack(spacing: 6) { ProgressView().controlSize(.mini).tint(LW.muted); Text(t("send.preview.statusQuoting")) }
                 .font(LW.font(12, .semibold)).foregroundStyle(LW.muted)
-                .padding(.horizontal, 12).padding(.vertical, 4).background(LW.secondary).clipShape(Capsule())
+                .padding(.horizontal, 12).padding(.vertical, 6).background(Color.white.opacity(0.08), in: Capsule())
         case .failed:
-            Text(t("send.preview.statusFailed")).font(LW.font(12, .semibold)).foregroundStyle(LW.destructiveText)
-                .padding(.horizontal, 12).padding(.vertical, 4).background(LW.destructive.opacity(0.15)).clipShape(Capsule())
+            HStack(spacing: 6) { Circle().fill(LW.coral).frame(width: 6, height: 6); Text(t("send.preview.statusFailed")) }
+                .font(LW.font(12, .semibold)).foregroundStyle(LW.destructiveText)
+                .padding(.horizontal, 12).padding(.vertical, 6).background(LW.coral.opacity(0.16), in: Capsule())
         case .ready:
-            Text(t("send.preview.statusReady")).font(LW.font(12, .semibold))
-                .padding(.horizontal, 12).padding(.vertical, 4).background(theme.preset.t400.opacity(0.2)).clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(theme.preset.t300))
+            HStack(spacing: 6) { Circle().fill(theme.preset.primary).frame(width: 6, height: 6); Text(t("send.preview.statusReady")) }
+                .font(LW.font(12, .semibold)).foregroundStyle(LW.foreground)
+                .padding(.horizontal, 12).padding(.vertical, 6).background(theme.preset.primary.opacity(0.18), in: Capsule())
+                .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("send.preview.ready")
         }
     }
@@ -583,7 +595,8 @@ struct SendPreviewScreen: View {
             Spacer(minLength: 12)
             Text(value).fontWeight(strong ? .semibold : .medium).foregroundStyle(muted ? LW.muted : LW.foreground).lineLimit(1)
         }
-        .font(LW.font(14))
+        .font(LW.font(15))
+        .padding(.horizontal, 14).padding(.vertical, 13)
     }
 
     private func detailRow(_ label: String, _ value: String) -> some View {
@@ -592,7 +605,8 @@ struct SendPreviewScreen: View {
             Spacer(minLength: 12)
             Text(value).fontWeight(.medium).multilineTextAlignment(.trailing)
         }
-        .font(LW.font(14))
+        .font(LW.font(15))
+        .padding(.horizontal, 18).padding(.vertical, 14)
     }
 
     private func kindLabel(_ d: Destination?) -> String {
@@ -710,8 +724,10 @@ struct SendSummaryScreen: View {
                             proofs: [(t("send.summary.paymentHash"), r.paymentHash), (t("send.summary.preimage"), r.preimage.isEmpty ? nil : r.preimage)]
                         )
                     }
-                    .padding(.horizontal, 16).padding(.top, 32).padding(.bottom, 16)
+                    .padding(.horizontal, 20).padding(.top, 32).padding(.bottom, 16)
                 }
+                .scrollIndicators(.hidden)
+                .lwSoftScrollEdges()
                 PayReceiptActions(shareText: PayReceiptText.build(amount: "\(app.currencies.format(r.amountSats, code)) \(app.currencies.unit(code))",
                                                             fee: fee, recipient: r.recipient, destination: destination, comment: r.comment,
                                                             date: r.date, paymentHash: r.paymentHash, preimage: r.preimage)) {

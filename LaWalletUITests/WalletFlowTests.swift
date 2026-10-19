@@ -110,8 +110,10 @@ final class WalletFlowTests: XCTestCase {
         tap(app, "send.amount.continue")
         let swipe = el(app, "swipe.confirm")
         XCTAssertTrue(swipe.waitForExistence(timeout: 40))
+        XCTAssertTrue(el(app, "send.preview.ready").waitForExistence(timeout: 40), "quote never became ready")
         let start = swipe.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.5))
-        start.press(forDuration: 0.1, thenDragTo: swipe.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.5)))
+        start.press(forDuration: 0.3, thenDragTo: swipe.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.5)),
+                    withVelocity: .slow, thenHoldForDuration: 0.2)
         tap(app, "summary.done", timeout: 90)
         wait(el(app, "home.balance"), timeout: 60, "label != '\(before)'")
     }

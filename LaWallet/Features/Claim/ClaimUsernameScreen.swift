@@ -64,60 +64,76 @@ struct ClaimUsernameScreen: View {
     // MARK: username
 
     private var usernameStep: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(t("claim.heading")).font(LW.font(24, .semibold))
-                Text(t(fromActivation ? (bonus ? "claim.introActivateFree" : "claim.introActivate") : "claim.intro"))
-                    .font(LW.font(14)).foregroundStyle(LW.muted).lineSpacing(3)
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                Text(t("claim.username")).font(LW.font(14, .medium))
-                HStack(spacing: 0) {
-                    TextField("satoshi", text: $username)
-                        .font(LW.font(16))
-                        .keyboardType(.asciiCapable)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.go)
-                        .focused($focused)
-                        .onSubmit { Task { await submit() } }
-                        .onChange(of: username) { _, next in
-                            let lower = String(next.lowercased().prefix(16))
-                            if lower != next { username = lower }
-                        }
-                        .padding(.horizontal, 14)
-                        .accessibilityIdentifier("claim.username")
-                    Text("@\(domain)").font(LW.font(14)).foregroundStyle(LW.muted).lineLimit(1).padding(.trailing, 12)
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(t("claim.heading")).font(LW.font(30, .bold)).tracking(-0.6)
+                    Text(t(fromActivation ? (bonus ? "claim.introActivateFree" : "claim.introActivate") : "claim.intro"))
+                        .font(LW.font(15)).foregroundStyle(LW.muted).lineSpacing(3)
                 }
-                .frame(height: 48)
-                .background(LW.background)
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(focused ? LW.ring : LW.border))
-                hint.font(LW.font(12)).frame(minHeight: 16).accessibilityIdentifier("claim.hint")
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(t("claim.username")).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 4)
+                    usernameField
+                    hint.frame(minHeight: 18).padding(.leading, 4).accessibilityIdentifier("claim.hint")
+                }
             }
-            Spacer(minLength: 0)
-            Button { Task { await submit() } } label: {
-                PayButtonLabel(busy: submitting, title: t("claim.claimAddress"), busyTitle: t("claim.claiming"))
+            .padding(.horizontal, 20).padding(.top, fromActivation ? 32 : 8)
+            .frame(maxHeight: .infinity, alignment: .top)
+            BottomBar {
+                Button { Task { await submit() } } label: {
+                    PayButtonLabel(busy: submitting, title: t("claim.claimAddress"), busyTitle: t("claim.claiming"))
+                }
+                .buttonStyle(.lw(.theme))
+                .disabled(submitDisabled)
+                .accessibilityIdentifier("claim.submit")
             }
-            .buttonStyle(.lw(.theme))
-            .disabled(submitDisabled)
-            .accessibilityIdentifier("claim.submit")
         }
-        .padding(.horizontal, 24).padding(.top, fromActivation ? 32 : 8).padding(.bottom, 24)
         .onAppear { focused = true }
     }
 
-    @ViewBuilder private var hint: some View {
-        if let formatError {
-            Text(formatError).foregroundStyle(LW.destructiveText)
-        } else if checking {
-            Text(t("claim.checkingAvailability")).foregroundStyle(LW.muted)
-        } else if available == false {
-            Text(t("claim.taken")).foregroundStyle(LW.destructiveText)
-        } else if available == true {
-            Text(t("claim.available")).foregroundStyle(LW.incoming)
-        } else {
-            Text(t("claim.usernameHint")).foregroundStyle(LW.muted)
+    /// Glass field with the community domain living inside it, after the caret.
+    private var usernameField: some View {
+        let shape = RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous)
+        return HStack(spacing: 6) {
+            TextField("", text: $username, prompt: Text(verbatim: "satoshi").foregroundStyle(LW.muted.opacity(0.8)))
+                .font(LW.font(17, .medium))
+                .foregroundStyle(LW.foreground)
+                .keyboardType(.asciiCapable)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.go)
+                .focused($focused)
+                .onSubmit { Task { await submit() } }
+                .onChange(of: username) { _, next in
+                    let lower = String(next.lowercased().prefix(16))
+                    if lower != next { username = lower }
+                }
+                .accessibilityIdentifier("claim.username")
+            Text("@\(domain)").font(LW.font(15, .medium)).foregroundStyle(LW.muted).lineLimit(1)
         }
+        .padding(.horizontal, 16).frame(minHeight: 54)
+        .lwGlass(in: shape)
+        .overlay(shape.strokeBorder(Color.white.opacity(focused ? 0.22 : 0), lineWidth: 1))
+    }
+
+    /// Availability as a small colored dot + text (sun while checking, green free, coral taken/invalid).
+    private var hint: some View {
+        let state: (text: String, dot: Color?, color: Color) = if let formatError {
+            (formatError, LW.coral, LW.destructiveText)
+        } else if checking {
+            (t("claim.checkingAvailability"), LW.sun, LW.muted)
+        } else if available == false {
+            (t("claim.taken"), LW.coral, LW.destructiveText)
+        } else if available == true {
+            (t("claim.available"), LW.incoming, LW.incoming)
+        } else {
+            (t("claim.usernameHint"), nil, LW.muted)
+        }
+        return HStack(spacing: 7) {
+            if let dot = state.dot { Circle().fill(dot).frame(width: 7, height: 7) }
+            Text(state.text).foregroundStyle(state.color)
+        }
+        .font(LW.font(13, .medium))
     }
 
     /// Debounced (300 ms) public availability check; a failed check means "unknown", not "taken".
@@ -259,73 +275,90 @@ struct ClaimUsernameScreen: View {
     @ViewBuilder private var paymentStep: some View {
         if let inv = invoice, let bolt11 = inv.bolt11 {
             ScrollView {
-                VStack(spacing: 20) {
-                    VStack(spacing: 4) {
-                        Text(t("claim.payAmount", ["sats": (inv.amountSats ?? 0).formatted()])).font(LW.font(20, .semibold))
+                VStack(spacing: 22) {
+                    VStack(spacing: 6) {
+                        Text(t("claim.payAmount", ["sats": (inv.amountSats ?? 0).formatted()])).font(LW.font(26, .bold)).tracking(-0.4)
+                            .multilineTextAlignment(.center)
                             .accessibilityIdentifier("claim.payAmount")
-                        (Text(t("claim.toClaim") + " ").foregroundStyle(LW.muted) + Text("\(username)@\(domain)").fontWeight(.medium))
-                            .font(LW.font(14))
+                        (Text(t("claim.toClaim") + " ").foregroundStyle(LW.muted) + Text("\(username)@\(domain)").fontWeight(.semibold))
+                            .font(LW.font(15)).multilineTextAlignment(.center)
                     }
                     if status == .expired {
-                        VStack(spacing: 12) {
-                            Text(t("claim.invoiceExpired")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                        VStack(spacing: 14) {
+                            Icon("clock", size: 24).foregroundStyle(LW.muted).frame(width: 60, height: 60).lwGlass(in: Circle())
+                            Text(t("claim.invoiceExpired")).font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
                             Button { Task { await mintInvoice() } } label: {
                                 Label { Text(t("claim.newInvoice")) } icon: { Icon("refresh-cw", size: 14) }
                             }
                             .buttonStyle(.lw(.theme, fullWidth: false))
                         }
+                        .padding(.top, 16)
                     } else {
+                        // QRDisplay-style: opaque white tile for scanners, set in a glass bezel.
                         QRCodeImage(text: bolt11)
-                            .frame(width: 224, height: 224).padding(16).background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .frame(width: 224, height: 224).padding(16)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                             .accessibilityIdentifier("claim.qr")
-                        VStack(spacing: 8) {
-                            if app.wallet.hasWallet {
-                                Button { Task { await payWithWallet() } } label: {
-                                    PayButtonLabel(busy: payingWithWallet, title: t("claim.payWithWallet"), busyTitle: t("claim.confirmInWallet"), icon: "wallet")
+                            .padding(10)
+                            .lwSurface(LW.Radius.sheet)
+                        GlassGroup(spacing: 10) {
+                            VStack(spacing: 10) {
+                                if app.wallet.hasWallet {
+                                    Button { Task { await payWithWallet() } } label: {
+                                        PayButtonLabel(busy: payingWithWallet, title: t("claim.payWithWallet"), busyTitle: t("claim.confirmInWallet"), icon: "wallet")
+                                    }
+                                    .buttonStyle(.lw(.theme))
+                                    .disabled(payingWithWallet || status == .detected)
+                                    .accessibilityIdentifier("claim.payWithWallet")
                                 }
-                                .buttonStyle(.lw(.theme))
-                                .disabled(payingWithWallet || status == .detected)
-                                .accessibilityIdentifier("claim.payWithWallet")
+                                Button {
+                                    UIPasteboard.general.string = bolt11
+                                    copied = true
+                                    Task { try? await Task.sleep(for: .seconds(2)); copied = false }
+                                } label: {
+                                    Label { Text(t(copied ? "claim.copied" : "claim.copyInvoice")) } icon: { Icon(copied ? "check" : "copy", size: 16) }
+                                }
+                                .buttonStyle(.lw(.outline))
+                                .accessibilityIdentifier("claim.copy")
                             }
-                            Button {
-                                UIPasteboard.general.string = bolt11
-                                copied = true
-                                Task { try? await Task.sleep(for: .seconds(2)); copied = false }
-                            } label: {
-                                Label { Text(t(copied ? "claim.copied" : "claim.copyInvoice")) } icon: { Icon("copy", size: 16) }
-                            }
-                            .buttonStyle(.lw(.outline))
-                            .accessibilityIdentifier("claim.copy")
                         }
-                        VStack(spacing: 8) {
+                        VStack(spacing: 6) {
                             switch status {
                             case .waiting:
-                                HStack(spacing: 8) { ProgressView().controlSize(.mini).tint(LW.muted); Text(t("claim.waitingPayment")) }
-                                    .font(LW.font(12)).foregroundStyle(LW.muted)
+                                HStack(spacing: 8) { PulseDot(); Text(t("claim.waitingPayment")) }
+                                    .font(LW.font(13, .medium)).foregroundStyle(LW.foreground.opacity(0.9))
+                                    .padding(.horizontal, 14).padding(.vertical, 9)
+                                    .lwGlass(in: Capsule())
+                                    .accessibilityElement(children: .combine)
                                 Button { Task { await manualCheck() } } label: {
                                     PayButtonLabel(busy: manualChecking, title: t("claim.checkNow"), busyTitle: t("claim.checking"), icon: "refresh-cw")
                                 }
-                                .buttonStyle(.lw(.ghost, height: 36, fullWidth: false))
+                                .buttonStyle(.lw(.ghost, height: 40, fullWidth: false))
                                 .disabled(manualChecking)
                                 .accessibilityIdentifier("claim.checkNow")
                             case .detected:
                                 HStack(spacing: 6) { Icon("check", size: 14); Text(t("claim.detected")) }
-                                    .font(LW.font(12)).foregroundStyle(LW.incoming)
+                                    .font(LW.font(13, .semibold)).foregroundStyle(LW.incoming)
+                                    .padding(.horizontal, 14).padding(.vertical, 9)
+                                    .lwGlass(in: Capsule(), tint: .color(LW.incoming.opacity(0.16)))
                             case .expired:
                                 EmptyView()
                             }
                         }
                     }
                 }
-                .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 24)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 24)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
         } else {
             VStack(spacing: 16) {
                 if let mintError {
-                    VStack(spacing: 4) {
-                        Text(t("claim.paymentFailedTitle")).font(LW.font(20, .semibold))
-                        Text(t("claim.paymentFailedBody", ["address": "\(username)@\(domain)"])).font(LW.font(14)).foregroundStyle(LW.muted)
+                    Icon("alert-triangle", size: 24).foregroundStyle(LW.destructiveText).frame(width: 60, height: 60).lwGlass(in: Circle())
+                    VStack(spacing: 6) {
+                        Text(t("claim.paymentFailedTitle")).font(LW.font(22, .semibold))
+                        Text(t("claim.paymentFailedBody", ["address": "\(username)@\(domain)"])).font(LW.font(15)).foregroundStyle(LW.muted)
                     }
                     .multilineTextAlignment(.center)
                     Text(mintError).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
@@ -334,12 +367,13 @@ struct ClaimUsernameScreen: View {
                         Label { Text(t("claim.tryAgain")) } icon: { Icon("refresh-cw", size: 14) }
                     }
                     .buttonStyle(.lw(.theme))
+                    .padding(.top, 4)
                 } else {
-                    HStack(spacing: 8) { ProgressView().controlSize(.small).tint(LW.muted); Text(t("claim.generatingInvoice")) }
-                        .font(LW.font(14)).foregroundStyle(LW.muted)
+                    HStack(spacing: 10) { ProgressView().controlSize(.small).tint(LW.muted); Text(t("claim.generatingInvoice")) }
+                        .font(LW.font(15)).foregroundStyle(LW.muted)
                 }
             }
-            .padding(.horizontal, 24).padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.bottom, 24)
             .frame(maxHeight: .infinity)
         }
     }
@@ -355,19 +389,23 @@ struct ClaimUsernameScreen: View {
     }
 
     private var successStep: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 8) {
-                Text(t("claim.claimedTitle")).font(LW.font(24, .semibold))
-                Text(t("claim.claimedBody")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+        VStack(spacing: 0) {
+            VStack(spacing: 28) {
+                VStack(spacing: 10) {
+                    Text(t("claim.claimedTitle")).font(LW.font(30, .bold)).tracking(-0.6).multilineTextAlignment(.center)
+                    Text(t("claim.claimedBody")).font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                }
+                .padding(.top, 40)
+                if let claimedAddress { SuccessHero(address: claimedAddress) }
             }
-            .padding(.top, 40)
-            if let claimedAddress { SuccessHero(address: claimedAddress) }
-            Spacer(minLength: 0)
-            Button(t("claim.goToWallet")) { app.popToRoot() }
-                .buttonStyle(.lw(.theme))
-                .accessibilityIdentifier("claim.done")
+            .padding(.horizontal, 20)
+            .frame(maxHeight: .infinity, alignment: .top)
+            BottomBar {
+                Button(t("claim.goToWallet")) { app.popToRoot() }
+                    .buttonStyle(.lw(.theme))
+                    .accessibilityIdentifier("claim.done")
+            }
         }
-        .padding(.horizontal, 24).padding(.bottom, 24)
     }
 
     private func fail(_ message: String) {
@@ -392,16 +430,19 @@ private struct SuccessHero: View {
                 Text(parts.first ?? address).foregroundStyle(LW.muted)
                 if parts.count > 1 { Text("@" + parts[1]).foregroundStyle(LW.foreground) }
             }
-            .font(LW.font(18, .medium)).lineLimit(1).minimumScaleFactor(0.6)
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .background(LW.background).clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(LW.border))
-            .shadow(color: .black.opacity(0.4), radius: 25, y: 25)
+            .font(LW.font(19, .semibold)).lineLimit(1).minimumScaleFactor(0.6)
+            .padding(.horizontal, 18).padding(.vertical, 10)
+            // A chip inside the glass card, not glass of its own.
+            .background(Color.white.opacity(0.08), in: Capsule())
+            .overlay(Capsule().strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.3), radius: 20, y: 14)
+            .padding(.horizontal, 16)
             .offset(y: shown ? 0 : 12).opacity(shown ? 1 : 0)
             .accessibilityIdentifier("claim.address")
         }
         .frame(maxWidth: .infinity).aspectRatio(16 / 9, contentMode: .fit)
-        .background(LW.card).clipShape(RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(LW.border))
+        .clipShape(RoundedRectangle(cornerRadius: LW.Radius.surface, style: .continuous))
+        .lwSurface()
         .onAppear { withAnimation(.easeOut(duration: 0.6).delay(0.15)) { shown = true } }
     }
 }

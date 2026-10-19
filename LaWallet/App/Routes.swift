@@ -52,7 +52,20 @@ extension Route {
     }
 }
 
+extension Route {
+    /// Ambient light strength behind the screen: flows that need focus (amount entry, scanning) stay quieter.
+    var ambientIntensity: Double {
+        switch self {
+        case .scan: 0.5  // the camera feed covers it when available
+        case .sendAmount, .receiveAmount, .sendPreview, .withdraw: 0.6
+        default: 0.8
+        }
+    }
+}
+
 extension AuthRoute {
+    var ambientIntensity: Double { 0.9 }
+
     @MainActor @ViewBuilder var view: some View {
         switch self {
         case .signup: SignupChoiceScreen()

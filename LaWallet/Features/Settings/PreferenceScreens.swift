@@ -30,20 +30,21 @@ struct CurrenciesScreen: View {
                                 codes.move(fromOffsets: from, toOffset: to)
                                 app.currencies.setActive(codes)
                             }
-                            .listRowBackground(LW.card)
+                            .listRowBackground(Self.rowGlass)
                     } header: { header(t("\(l).activeAssets")) } footer: {
-                        Text(t("\(l).hint")).font(LW.font(12)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity).padding(.top, 4)
+                        Text(t("\(l).hint")).font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity).padding(.top, 6)
                     }
 
                     Section {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             Icon("search", size: 16).foregroundStyle(LW.muted)
-                            TextField(t("\(l).searchPlaceholder"), text: $query)
-                                .font(LW.font(15)).autocorrectionDisabled().textInputAutocapitalization(.never)
+                            TextField("", text: $query, prompt: Text(verbatim: t("\(l).searchPlaceholder")).foregroundStyle(LW.muted.opacity(0.8)))
+                                .font(LW.font(16)).foregroundStyle(LW.foreground)
+                                .autocorrectionDisabled().textInputAutocapitalization(.never)
                         }
-                        .padding(.horizontal, 12).frame(height: 44).background(LW.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.horizontal, 16).frame(minHeight: 54)
+                        .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets())
                     }
@@ -51,24 +52,30 @@ struct CurrenciesScreen: View {
                     Section {
                         if available.isEmpty {
                             Text(t("\(l).noMatch")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
-                                .listRowBackground(LW.card.opacity(0.4))
+                                .listRowBackground(Self.rowGlass)
                         } else {
-                            ForEach(available) { c in availableRow(c) }.listRowBackground(LW.card)
+                            ForEach(available) { c in availableRow(c) }.listRowBackground(Self.rowGlass)
                         }
                     } header: { header(t("\(l).available")) }
                 }
                 .listStyle(.insetGrouped)
                 .listSectionSpacing(24)
                 .scrollContentBackground(.hidden)
-                .contentMargins(.bottom, 140, for: .scrollContent)
+                .scrollIndicators(.hidden)
+                .lwSoftScrollEdges()
+                .contentMargins(.bottom, 150, for: .scrollContent)
                 .scrollDismissesKeyboard(.immediately)
             }
             SettingsTabbar()
         }
     }
 
+    /// `List` keeps native drag-to-reorder, so its sections can't be one glass shape; each row gets the glass fallback
+    /// material instead (the list clips the section into a single rounded surface, so there are no seams).
+    private static var rowGlass: some View { Rectangle().fill(.ultraThinMaterial) }
+
     private func header(_ text: String) -> some View {
-        Text(text).font(LW.font(14, .medium)).foregroundStyle(LW.muted).textCase(nil).padding(.leading, -12)
+        Text(text).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).textCase(nil).padding(.leading, -12)
     }
 
     /// Native currency name in the UI language (`Intl.DisplayNames`); catalog name for SAT/BTC.
@@ -81,13 +88,11 @@ struct CurrenciesScreen: View {
     private func activeRow(_ c: Currency) -> some View {
         HStack(spacing: 12) {
             if c.locked {
-                Icon("lock", size: 16).foregroundStyle(LW.muted).frame(width: 36, height: 36).background(LW.secondary)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                tile(Icon("lock", size: 15).foregroundStyle(LW.muted), Color.white.opacity(0.08))
                     .accessibilityLabel(t("\(l).alwaysActive"))
             } else {
                 Button { app.currencies.setActive(app.currencies.active.filter { $0 != c.code }) } label: {
-                    Icon("minus", size: 16).foregroundStyle(Color(hex: "fef2f2")).frame(width: 36, height: 36).background(LW.destructive.opacity(0.9))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    tile(Icon("minus", size: 16).foregroundStyle(LW.destructiveText), LW.coral.opacity(0.18))
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(t("\(l).remove", ["name": name(c)]))
@@ -96,21 +101,21 @@ struct CurrenciesScreen: View {
             avatar(c)
             label(c)
             if c.locked {
-                Text(t("\(l).alwaysActive")).font(LW.font(11)).foregroundStyle(LW.muted)
+                Text(t("\(l).alwaysActive")).font(LW.font(12)).foregroundStyle(LW.muted)
             } else {
-                Icon("grip-vertical", size: 16).foregroundStyle(LW.muted).frame(width: 36, height: 36)
+                Icon("grip-vertical", size: 16).foregroundStyle(LW.muted.opacity(0.8)).frame(width: 36, height: 36)
                     .accessibilityLabel(t("\(l).reorder", ["name": name(c)]))
             }
         }
         .frame(height: 64)
-        .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
+        .listRowInsets(EdgeInsets(top: 0, leading: 14, bottom: 0, trailing: 12))
+        .listRowSeparatorTint(Color.white.opacity(0.08))
     }
 
     private func availableRow(_ c: Currency) -> some View {
         HStack(spacing: 12) {
             Button { app.currencies.setActive(app.currencies.active + [c.code]) } label: {
-                Icon("plus", size: 16).foregroundStyle(LW.foreground).frame(width: 36, height: 36).background(LW.secondary)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                tile(Icon("plus", size: 16).foregroundStyle(LW.foreground), Color.white.opacity(0.10))
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(t("\(l).add", ["name": name(c)]))
@@ -119,19 +124,24 @@ struct CurrenciesScreen: View {
             label(c)
         }
         .frame(height: 64)
-        .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
+        .listRowInsets(EdgeInsets(top: 0, leading: 14, bottom: 0, trailing: 12))
+        .listRowSeparatorTint(Color.white.opacity(0.08))
+    }
+
+    private func tile(_ icon: some View, _ fill: Color) -> some View {
+        icon.frame(width: 36, height: 36).background(fill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func avatar(_ c: Currency) -> some View {
-        Text(c.code.prefix(3)).font(LW.font(11, .semibold)).tracking(1).foregroundStyle(LW.muted)
-            .frame(width: 36, height: 36).background(LW.background).clipShape(RoundedRectangle(cornerRadius: 6))
+        Text(c.code.prefix(3)).font(LW.font(11, .semibold)).foregroundStyle(LW.foreground.opacity(0.8))
+            .frame(width: 36, height: 36).background(Color.white.opacity(0.06), in: Circle())
             .accessibilityHidden(true)
     }
 
     private func label(_ c: Currency) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(name(c)).font(LW.font(14, .medium)).lineLimit(1)
-            Text(c.code).font(LW.font(12)).foregroundStyle(LW.muted)
+            Text(name(c)).font(LW.font(15, .medium)).foregroundStyle(LW.foreground).lineLimit(1)
+            Text(c.code).font(LW.font(13)).foregroundStyle(LW.muted)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -203,23 +213,24 @@ struct InstanceScreen: View {
 
     var body: some View {
         SettingsPage(title: t("ios.instance.title"), tabbar: app.isAuthenticated) {
-            Text(t("ios.instance.subtitle")).font(LW.font(14)).foregroundStyle(LW.muted)
+            Text(t("ios.instance.subtitle")).font(LW.font(15)).foregroundStyle(LW.muted).padding(.horizontal, 6)
 
             SettingsSection(t("ios.instance.current")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 12) {
-                        SettingsIsotype(size: 40)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(app.communityName).font(LW.font(16, .semibold))
-                            Text(app.instanceURL.host() ?? app.instanceURL.absoluteString).font(LW.font(14)).foregroundStyle(LW.muted)
+                HStack(spacing: 14) {
+                    SettingsIconTile(icon: "globe", color: LW.mint, size: 46)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(app.instanceURL.host() ?? app.instanceURL.absoluteString).font(LW.font(20, .semibold)).foregroundStyle(LW.foreground)
+                            .lineLimit(1).truncationMode(.middle)
+                        Text(app.communityName).font(LW.font(14)).foregroundStyle(LW.muted).lineLimit(1)
+                        if app.endpoint != app.instanceURL {
+                            Text(app.endpoint.absoluteString).font(.system(size: 12, design: .monospaced)).foregroundStyle(LW.muted)
+                                .lineLimit(1).truncationMode(.middle)
                         }
                     }
-                    if app.endpoint != app.instanceURL {
-                        Text(app.endpoint.absoluteString).font(.system(size: 12, design: .monospaced)).foregroundStyle(LW.muted)
-                    }
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16).background(LW.card).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(18)
+                .lwSurface()
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("instance.current")
             }
@@ -231,22 +242,26 @@ struct InstanceScreen: View {
                     .onSubmit { Task { await go(url) } }
                     .accessibilityIdentifier("instance.field")
                 ErrorText(message: error)
-                Button { Task { await go(url) } } label: {
-                    HStack(spacing: 8) {
-                        if busy { ProgressView().tint(LW.foreground) }
-                        Text(t("ios.instance.switch"))
+                GlassGroup(spacing: 10) {
+                    VStack(spacing: 6) {
+                        Button { Task { await go(url) } } label: {
+                            HStack(spacing: 8) {
+                                if busy { ProgressView().tint(LW.foreground) }
+                                Text(t("ios.instance.switch"))
+                            }
+                        }
+                        .buttonStyle(.lw(.theme))
+                        .disabled(busy || url.trimmedValue.isEmpty)
+                        .accessibilityIdentifier("instance.switch")
+                        Button(t("ios.instance.reset")) { Task { await go(AppModel.defaultInstance.absoluteString) } }
+                            .buttonStyle(.lw(.ghost, height: 44))
+                            .disabled(busy || app.instanceURL == AppModel.defaultInstance)
+                            .accessibilityIdentifier("instance.reset")
                     }
                 }
-                .buttonStyle(.lw(.theme))
-                .disabled(busy || url.trimmedValue.isEmpty)
-                .accessibilityIdentifier("instance.switch")
-                Button(t("ios.instance.reset")) { Task { await go(AppModel.defaultInstance.absoluteString) } }
-                    .buttonStyle(.lw(.outline))
-                    .disabled(busy || app.instanceURL == AppModel.defaultInstance)
-                    .accessibilityIdentifier("instance.reset")
             }
 
-            Text(t("ios.instance.note")).font(LW.font(12)).foregroundStyle(LW.muted)
+            Text(t("ios.instance.note")).font(LW.font(13)).foregroundStyle(LW.muted).padding(.horizontal, 6)
         }
     }
 

@@ -29,7 +29,8 @@ struct ClaimCelebration: View {
         let before = locked?.before
         let final = reduced || landed
         ZStack {
-            Color(hex: "070604").ignoresSafeArea()
+            // Scrim over the route's ambient light, so the chest's warm glow leads.
+            Color.black.opacity(0.62).ignoresSafeArea()
             atmosphere(glow: celebrate && opened)
 
             ZStack {
@@ -43,26 +44,22 @@ struct ClaimCelebration: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Button(action: celebrate ? onDone : onDismiss) {
-                        Icon("x").frame(width: 44, height: 44).contentShape(Rectangle())
-                    }
-                    .accessibilityLabel(t(celebrate ? "common.close" : "common.back"))
-                    .accessibilityIdentifier("withdraw.close")
+                    GlassIconButton(icon: "x", label: t(celebrate ? "common.close" : "common.back"), action: celebrate ? onDone : onDismiss)
+                        .accessibilityIdentifier("withdraw.close")
                     Spacer()
                 }
-                .foregroundStyle(Self.amber.opacity(0.8))
-                .padding(.horizontal, 12).padding(.top, 4)
+                .padding(.horizontal, 16).frame(height: 60)
 
                 VStack(spacing: 8) {
-                    Text(t(celebrate ? "withdraw.celebration.eyebrowClaimed" : "withdraw.celebration.eyebrowClaiming").uppercased())
-                        .font(LW.font(10, .semibold)).tracking(3.2).foregroundStyle(Self.amber.opacity(0.7))
+                    Text(t(celebrate ? "withdraw.celebration.eyebrowClaimed" : "withdraw.celebration.eyebrowClaiming"))
+                        .font(LW.font(14, .semibold)).foregroundStyle(Self.amber.opacity(0.75))
                     Text(t(celebrate ? (settled ? "withdraw.celebration.won" : "withdraw.celebration.onItsWay") : "withdraw.celebration.opening"))
-                        .font(LW.font(30, .semibold)).foregroundStyle(Color(hex: "fffbeb"))
+                        .font(LW.font(30, .bold)).tracking(-0.5).foregroundStyle(Color(hex: "fffbeb")).multilineTextAlignment(.center)
                         .accessibilityIdentifier("withdraw.celebration.title")
                     if !(celebrate && settled) {
                         Text(celebrate ? t("withdraw.celebration.pendingBody")
                                        : t("withdraw.celebration.calling", ["amount": amountSats.formatted()]))
-                            .font(LW.font(14)).foregroundStyle(Self.amber.opacity(0.6)).multilineTextAlignment(.center)
+                            .font(LW.font(15)).foregroundStyle(Self.amber.opacity(0.65)).multilineTextAlignment(.center)
                             .frame(maxWidth: 300)
                     }
                 }
@@ -73,41 +70,40 @@ struct ClaimCelebration: View {
 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("+" + Int(final ? Double(amountSats) : counted).formatted())
-                        .font(.system(size: 64, weight: .bold, design: .rounded)).monospacedDigit()
+                        .font(LW.font(64, .semibold)).tracking(-2).monospacedDigit()
                         .foregroundStyle(Self.gold)
                         .lineLimit(1).minimumScaleFactor(0.5)
-                    Text("sats").font(LW.font(18, .medium)).foregroundStyle(Self.amber.opacity(0.8))
+                        .contentTransition(.numericText())
+                        .shadow(color: Color(hex: "fbbf24").opacity(0.35), radius: 18, y: 6)
+                    Text("sats").font(LW.font(20, .medium)).foregroundStyle(Self.amber.opacity(0.8))
                 }
                 .scaleEffect(landed && !reduced ? 1.08 : 1)
                 .animation(.spring(duration: 0.4, bounce: 0.5), value: landed)
                 .opacity(celebrate && (reduced || opened) ? 1 : 0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(t(settled ? "withdraw.celebration.srLanded" : "withdraw.celebration.srOnTheWay", ["amount": amountSats.formatted()]))
-                .padding(.bottom, 8)
+                .padding(.horizontal, 20).padding(.bottom, 8)
 
                 balanceCard(celebrate: celebrate, before: before, final: final)
+                    .padding(.horizontal, 20)
 
                 Group {
                     if celebrate {
                         Button(t("withdraw.celebration.collect"), action: onDone)
-                            .font(LW.font(16, .semibold))
-                            .foregroundStyle(Color(hex: "451a03"))
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .background(LinearGradient(colors: [Color(hex: "fcd34d"), Color(hex: "f59e0b")], startPoint: .top, endPoint: .bottom))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: Color(hex: "fbbf24").opacity(0.5), radius: 16, y: 8)
+                            .buttonStyle(.lw(.primary))
+                            .shadow(color: Color(hex: "fbbf24").opacity(0.45), radius: 18, y: 8)
                             .accessibilityIdentifier("withdraw.done")
                     } else {
-                        Text(t("withdraw.celebration.listening").uppercased())
-                            .font(LW.font(12)).tracking(2.6).foregroundStyle(Self.amber.opacity(0.5))
+                        Text(t("withdraw.celebration.listening"))
+                            .font(LW.font(14, .medium)).foregroundStyle(Self.amber.opacity(0.6))
                             .opacity(wobble ? 0.4 : 1)
                             .animation(.easeInOut(duration: 1).repeatForever(), value: wobble)
                             .padding(.vertical, 24)
                     }
                 }
-                .padding(.top, 20)
+                .padding(.horizontal, 20).padding(.top, 20)
             }
-            .padding(.horizontal, 20).padding(.bottom, 24)
+            .padding(.bottom, 10)
         }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { wobble = true }
@@ -169,8 +165,8 @@ struct ClaimCelebration: View {
         let filled = celebrate && settled ? (final ? 1 : (amountSats > 0 ? counted / Double(amountSats) : 0)) : (celebrate && final ? 1 : 0)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(t("withdraw.celebration.balance").uppercased()).font(LW.font(10, .semibold)).tracking(2.2)
-                    .foregroundStyle(Self.amber.opacity(0.6))
+                Text(t("withdraw.celebration.balance")).font(LW.font(13, .semibold))
+                    .foregroundStyle(Self.amber.opacity(0.7))
                 Spacer()
                 if !celebrate {
                     Text(t("withdraw.celebration.holding")).font(LW.font(12)).foregroundStyle(Self.amber.opacity(0.7))
@@ -183,7 +179,8 @@ struct ClaimCelebration: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(shown.map { $0.formatted() } ?? t("withdraw.celebration.syncing"))
-                    .font(LW.font(24, .semibold)).monospacedDigit().foregroundStyle(Color(hex: "fffbeb"))
+                    .font(LW.font(26, .semibold)).tracking(-0.6).monospacedDigit().foregroundStyle(Color(hex: "fffbeb"))
+                    .contentTransition(.numericText())
                     .accessibilityIdentifier("withdraw.celebration.balance")
                 Text("sats").font(LW.font(14)).foregroundStyle(Self.amber.opacity(0.6))
             }
@@ -203,7 +200,7 @@ struct ClaimCelebration: View {
                 .padding(3)
             }
             .frame(height: 16)
-            .background(Color.black.opacity(0.4)).clipShape(Capsule())
+            .lwInset(8)
             .accessibilityLabel(t("withdraw.celebration.meter"))
             if celebrate, let before {
                 HStack {
@@ -214,11 +211,15 @@ struct ClaimCelebration: View {
                 .font(LW.font(11)).monospacedDigit().foregroundStyle(Self.amber.opacity(0.5))
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(Color.black.opacity(0.35))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .strokeBorder(Color(hex: final && settled && celebrate ? "fcd34d" : "fde68a").opacity(final && settled && celebrate ? 0.4 : 0.15)))
+        .padding(.horizontal, 18).padding(.vertical, 16)
+        .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.surface, style: .continuous),
+                 tint: .color(LW.sun.opacity(final && settled && celebrate ? 0.16 : 0.06)))
+        .overlay {
+            // Gold rim once the sats have landed.
+            if final && settled && celebrate {
+                RoundedRectangle(cornerRadius: LW.Radius.surface, style: .continuous).strokeBorder(Color(hex: "fcd34d").opacity(0.4))
+            }
+        }
     }
 
     // MARK: math (resolveClaimBalances / claimPourShare)

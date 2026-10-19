@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// components/activate/card-3d.tsx, flattened to 2D: the card design gently bobs and sways (rotation + foreshortening),
-/// with a sweeping sheen and a pulsing themed glow. Frozen under Reduce Motion.
+/// components/activate/card-3d.tsx, flattened to 2D: the card design gently bobs and sways (rotation + foreshortening)
+/// over the ambient light, with a glass reflection (specular top + lit rim), a sweeping sheen and a pulsing themed glow.
+/// Frozen under Reduce Motion.
 struct ActivationCard: View {
     let imageURL: URL?
     var title: String?
@@ -30,7 +31,7 @@ struct ActivationCard: View {
                     .scaleEffect(x: 1 - 0.05 * abs(sway), y: 1)
                     .rotationEffect(.degrees(2.5 * sway))
                     .offset(y: -14 * bob)
-                    .shadow(color: .black.opacity(0.55), radius: 24, y: 18)
+                    .shadow(color: .black.opacity(0.45), radius: 30, y: 22 - 6 * bob)
             }
         }
         .frame(width: Self.size.width + 40, height: Self.size.height + 60)
@@ -63,8 +64,19 @@ struct ActivationCard: View {
             }
         }
         .frame(width: Self.size.width, height: Self.size.height)
+        .overlay {
+            // Glass reflection: a soft specular wash across the top half, like light on a laminated card.
+            LinearGradient(stops: [.init(color: .white.opacity(0.20), location: 0), .init(color: .white.opacity(0.05), location: 0.38),
+                                   .init(color: .clear, location: 0.55)], startPoint: .top, endPoint: .bottom)
+                .allowsHitTesting(false)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.15)))
+        .overlay(
+            // Lit rim: bright where the light hits (top-left), fading round the edge.
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0.08), .white.opacity(0.22)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+        )
     }
 }
 
@@ -85,22 +97,29 @@ struct ActivationSuccessView: View {
         ZStack {
             ConfettiRain(lead: theme.preset.primary)
             VStack(spacing: 0) {
-                badge.padding(.bottom, 32)
-                Text(t("activate.success.title")).font(LW.font(24, .semibold)).foregroundStyle(LW.foreground).opacity(shown ? 1 : 0)
+                badge.padding(.bottom, 28)
+                Text(t("activate.success.title")).font(LW.font(30, .bold)).tracking(-0.6).foregroundStyle(LW.foreground)
+                    .multilineTextAlignment(.center).opacity(shown ? 1 : 0)
                 if !claimAddress || bonusSats != nil {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 12) {
                         if !claimAddress { Text(linkedText) }
                         if let bonusSats {
-                            Text(t("activate.success.bonus", ["sats": bonusSats.formatted()])).font(LW.font(14, .medium)).foregroundStyle(LW.foreground)
+                            HStack(spacing: 8) {
+                                Icon("zap", size: 15).foregroundStyle(LW.incoming)
+                                Text(t("activate.success.bonus", ["sats": bonusSats.formatted()])).font(LW.font(14, .semibold))
+                                    .foregroundStyle(LW.foreground).monospacedDigit()
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .lwGlass(in: Capsule(), tint: .color(LW.incoming.opacity(0.14)))
                         }
                     }
-                    .font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center).frame(maxWidth: 320)
-                    .padding(.top, 8).opacity(shown ? 1 : 0)
+                    .font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center).frame(maxWidth: 320)
+                    .padding(.top, 10).opacity(shown ? 1 : 0)
                 }
                 ActivationCard(imageURL: imageURL, title: title, glow: false).scaleEffect(0.9).padding(.vertical, 16)
                 Button(t(claimAddress ? "activate.success.claimAddress" : "activate.openWallet"), action: onContinue)
                     .buttonStyle(.lw(.primary))
-                    .frame(maxWidth: 320)
+                    .frame(maxWidth: 360)
                     .accessibilityIdentifier("activate.success.continue")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -129,14 +148,14 @@ struct ActivationSuccessView: View {
                     ring(phase: (s + 1.0).truncatingRemainder(dividingBy: 1.6) / 1.6)
                 }
             }
-            Circle()
-                .fill(theme.preset.gradient)
-                .overlay(Circle().strokeBorder(theme.preset.t300))
-                .shadow(color: theme.preset.primary.opacity(0.55), radius: 18)
+            // Brand-tinted glass lens (same mark as `PaymentReceipt`), the drawn check on top.
+            Color.clear
                 .frame(width: 80, height: 80)
+                .lwGlass(in: Circle(), tint: .color(theme.preset.primary.opacity(0.75)))
+                .shadow(color: theme.preset.primary.opacity(0.5), radius: 24, y: 8)
             CheckPath()
                 .trim(from: 0, to: checked ? 1 : 0)
-                .stroke(LW.foreground, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                .stroke(Color.white, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                 .frame(width: 40, height: 40)
         }
         .frame(width: 96, height: 96)

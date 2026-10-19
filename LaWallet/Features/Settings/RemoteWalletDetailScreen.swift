@@ -5,6 +5,7 @@ import SwiftUI
 struct RemoteWalletDetailScreen: View {
     let walletId: String
     @Environment(AppModel.self) private var app
+    @Environment(\.theme) private var theme
     @Environment(\.dismiss) private var dismiss
     @State private var wallet: RemoteWallet?
     @State private var failed = false
@@ -17,8 +18,13 @@ struct RemoteWalletDetailScreen: View {
     var body: some View {
         SettingsPage(title: t("remoteWallets.detail.title"), refresh: { token = UUID(); await load() }) {
             if let wallet {
-                header(wallet)
-                protocols(wallet)
+                VStack(alignment: .leading, spacing: 16) {
+                    header(wallet)
+                    RowDivider().padding(.leading, -18)
+                    protocols(wallet)
+                }
+                .padding(18)
+                .lwSurface()
                 ForwardingPanel(walletId: wallet.id, token: token)
                 NotificationsPanel(walletId: wallet.id, token: token)
                 transactions(wallet)
@@ -29,10 +35,9 @@ struct RemoteWalletDetailScreen: View {
             } else if failed {
                 Text(t("remoteWallets.detail.notFound")).font(LW.font(14)).foregroundStyle(LW.destructiveText)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(20)
-                    .background(LW.destructive.opacity(0.05)).clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.destructive.opacity(0.4)))
+                    .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.surface - 4, style: .continuous), tint: .color(LW.coral.opacity(0.12)))
             } else {
-                ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 200)
             }
         }
         .task { await load() }
@@ -73,22 +78,20 @@ struct RemoteWalletDetailScreen: View {
     // MARK: sections
 
     private func header(_ w: RemoteWallet) -> some View {
-        HStack(spacing: 12) {
-            Icon("wallet").foregroundStyle(LW.gold).frame(width: 44, height: 44).background(LW.card)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(LW.border.opacity(0.6)))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(w.name).font(LW.font(20, .semibold)).lineLimit(1)
+        HStack(spacing: 14) {
+            SettingsIconTile(icon: "wallet", color: w.isDefault ? theme.preset.primary : LW.sun, size: 48)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(w.name).font(LW.font(22, .bold)).tracking(-0.3).foregroundStyle(LW.foreground).lineLimit(1)
                 HStack(spacing: 6) {
                     SettingsBadge(w.type, .outline)
-                    SettingsBadge(w.status)
+                    SettingsBadge(w.status, w.isActive ? .success : ["BLOCKED", "DEAD"].contains(w.status.uppercased()) ? .destructive : .outline)
                     if w.isDefault { SettingsBadge(t("remoteWallets.list.primary"), .primary) }
-                    if w.isLncurl { SettingsBadge("LNCurl") }
+                    if w.isLncurl { SettingsBadge("LNCurl", .info) }
                 }
-                Text(t("ios.set.wallets.created", ["date": SettingsFormat.dateTime(w.createdAt)])).font(LW.font(12)).foregroundStyle(LW.muted)
+                Text(t("ios.set.wallets.created", ["date": SettingsFormat.dateTime(w.createdAt)])).font(LW.font(13)).foregroundStyle(LW.muted)
             }
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 4)
         .accessibilityIdentifier("wallet.header")
     }
 
@@ -107,27 +110,24 @@ struct RemoteWalletDetailScreen: View {
             if !w.isActive { caption("LUD-21", t("\(p).lud21Inactive")) }
             if let zapDetail { caption("NIP-57", zapDetail) }
         }
-        .padding(8)
-        .background(LW.card.opacity(0.7)).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(LW.border.opacity(0.7)))
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(t("\(p).label"))
     }
 
     private func chip(_ label: String, on: Bool) -> some View {
         HStack(spacing: 6) {
-            Icon(on ? "check" : "minus", size: 10).frame(width: 16, height: 16)
-                .background((on ? LW.incoming : LW.muted).opacity(0.2)).clipShape(Circle())
-            Text(label).font(LW.font(12, .medium))
+            Icon(on ? "check" : "minus", size: 10).frame(width: 18, height: 18)
+                .background((on ? LW.incoming : LW.muted).opacity(0.2), in: Circle())
+            Text(label).font(LW.font(12, .semibold))
         }
         .padding(.leading, 4).padding(.trailing, 10).padding(.vertical, 4)
         .foregroundStyle(on ? LW.incoming : LW.muted)
-        .background(on ? LW.incoming.opacity(0.1) : LW.secondary.opacity(0.4)).clipShape(Capsule())
-        .overlay(Capsule().strokeBorder(on ? LW.incoming.opacity(0.3) : LW.border))
+        .background((on ? LW.incoming : LW.muted).opacity(0.16), in: Capsule())
     }
 
     private func caption(_ label: String, _ text: String) -> some View {
-        (Text(label + " · ").font(LW.font(12, .medium)) + Text(text).font(LW.font(12))).foregroundStyle(LW.muted).padding(.horizontal, 4)
+        (Text(label + " · ").font(LW.font(13, .semibold)) + Text(text).font(LW.font(13))).foregroundStyle(LW.muted)
     }
 
     private func transactions(_ w: RemoteWallet) -> some View {
@@ -143,13 +143,14 @@ struct RemoteWalletDetailScreen: View {
                 } else if let txs {
                     VStack(spacing: 0) {
                         ForEach(Array(txs.enumerated()), id: \.element.id) { i, tx in
-                            if i > 0 { Rectangle().fill(LW.border.opacity(0.4)).frame(height: 1) }
-                            Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }.buttonStyle(.plain)
+                            if i > 0 { RowDivider().padding(.leading, 56) }
+                            Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }.buttonStyle(PressScale())
                         }
                     }
-                    .background(LW.card.opacity(0.4)).clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.vertical, 4)
+                    .lwSurface()
                 } else {
-                    ProgressView().frame(maxWidth: .infinity, minHeight: 80)
+                    ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 96).lwSurface()
                 }
             }
             .accessibilityIdentifier("wallet.transactions")
@@ -158,32 +159,34 @@ struct RemoteWalletDetailScreen: View {
 
     private func emptyText(_ text: String, error: Bool = false) -> some View {
         Text(text).font(LW.font(14)).foregroundStyle(error ? LW.destructiveText : LW.muted).multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity).padding(.horizontal, 16).padding(.vertical, 32)
-            .background(LW.card.opacity(0.4)).clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity).padding(.horizontal, 20).padding(.vertical, 34)
+            .lwSurface()
     }
 }
 
-/// Panel chrome shared by forwarding and notifications (`rounded-2xl border bg-card/60`).
+/// Panel chrome shared by forwarding and notifications: one glass surface, hairline-divided sections inside.
 private struct Panel<Content: View>: View {
     @ViewBuilder var content: () -> Content
     var body: some View {
         VStack(alignment: .leading, spacing: 0) { content() }
-            .background(LW.card.opacity(0.6)).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(LW.border.opacity(0.7)))
+            .lwSurface()
     }
 }
 
+/// Full-width hairline between panel sections.
+private struct PanelDivider: View {
+    var body: some View { Rectangle().fill(Color.white.opacity(0.08)).frame(height: 0.5) }
+}
+
 @MainActor private func panelHeader(icon: String, tint: Color, title: String, badge: SettingsBadge?, subtitle: String) -> some View {
-    HStack(alignment: .top, spacing: 12) {
-        Icon(icon).foregroundStyle(tint).frame(width: 44, height: 44).background(tint.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(tint.opacity(0.25)))
+    HStack(alignment: .top, spacing: 14) {
+        SettingsIconTile(icon: icon, color: tint, size: 44)
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                Text(title).font(LW.font(16, .semibold))
+                Text(title).font(LW.font(17, .semibold)).foregroundStyle(LW.foreground)
                 if let badge { badge }
             }
-            Text(subtitle).font(LW.font(14)).foregroundStyle(LW.muted)
+            Text(subtitle).font(LW.font(14)).foregroundStyle(LW.muted).fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -208,11 +211,9 @@ private struct ForwardingPanel: View {
             if let action { panel(action) } else if failed {
                 Text(t("\(f).unavailable")).font(LW.font(14)).foregroundStyle(LW.destructiveText)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(20)
-                    .background(LW.destructive.opacity(0.05)).clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.destructive.opacity(0.4)))
+                    .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.surface, style: .continuous), tint: .color(LW.coral.opacity(0.12)))
             } else {
-                ProgressView().frame(maxWidth: .infinity, minHeight: 120)
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.border))
+                ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 120).lwSurface()
             }
         }
         .task(id: token) { await load() }
@@ -223,7 +224,6 @@ private struct ForwardingPanel: View {
                     self.action = next
                     await loadReceipts()
                 }
-                .presentationBackground(LW.background)
             }
         }
     }
@@ -231,32 +231,27 @@ private struct ForwardingPanel: View {
     private func panel(_ a: ReceiveAction) -> some View {
         Panel {
             VStack(alignment: .leading, spacing: 16) {
-                panelHeader(icon: "git-branch", tint: LW.gold, title: t("\(f).title"), badge: stateBadge(a), subtitle: t("\(f).subtitle"))
+                panelHeader(icon: "git-branch", tint: LW.sun, title: t("\(f).title"), badge: stateBadge(a), subtitle: t("\(f).subtitle"))
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 8) { buttons(a) }
                     VStack(alignment: .leading, spacing: 8) { buttons(a) }
                 }
             }
             .padding(20)
-            .background(LinearGradient(colors: [LW.gold.opacity(0.1), LW.card.opacity(0)], startPoint: .topLeading, endPoint: .bottomTrailing))
 
             if !a.eligible, let reason = a.reason {
                 HStack(alignment: .top, spacing: 12) {
                     Icon("alert-triangle", size: 16)
                     Text(reason).font(LW.font(14))
                 }
-                .foregroundStyle(LW.gold).padding(16).frame(maxWidth: .infinity, alignment: .leading)
-                .background(LW.gold.opacity(0.05)).clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.gold.opacity(0.3)))
+                .foregroundStyle(LW.sun).padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .background(LW.sun.opacity(0.10), in: RoundedRectangle(cornerRadius: LW.Radius.inset, style: .continuous))
                 .padding(.horizontal, 20).padding(.bottom, 16)
             }
 
-            Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
-            HStack(spacing: 4) {
-                tabButton(t("\(f).tabOverview"), "layout-dashboard", 0)
-                tabButton(t("\(f).tabActivity"), "activity", 1)
-            }
-            .padding(.horizontal, 16).padding(.top, 12)
+            PanelDivider()
+            GlassSegmented(items: [(0, t("\(f).tabOverview")), (1, t("\(f).tabActivity"))], selection: $tab, idPrefix: "forwarding.tab")
+                .padding(.horizontal, 20).padding(.top, 16)
 
             Group {
                 if tab == 0 { overview(a) } else { receiptList }
@@ -299,15 +294,6 @@ private struct ForwardingPanel: View {
         return a.enabled ? SettingsBadge(t("remoteWallets.live"), .success) : SettingsBadge(t("remoteWallets.paused"))
     }
 
-    private func tabButton(_ label: String, _ icon: String, _ i: Int) -> some View {
-        Button { tab = i } label: {
-            HStack(spacing: 6) { Icon(icon, size: 14); Text(label).font(LW.font(13, .medium)) }
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .foregroundStyle(tab == i ? LW.foreground : LW.muted)
-                .background(tab == i ? LW.background : .clear).clipShape(Capsule())
-        }
-    }
-
     @ViewBuilder private func overview(_ a: ReceiveAction) -> some View {
         if let r = a.revision {
             VStack(alignment: .leading, spacing: 20) {
@@ -317,25 +303,27 @@ private struct ForwardingPanel: View {
                     metric(t("\(f).entryFee"), "\(SettingsFormat.percent(bps: r.feeBps)) + \(Int(r.baseFeeSats)) sat")
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(t("\(f).destinations").uppercased()).font(LW.font(11, .semibold)).tracking(1.8).foregroundStyle(LW.muted)
+                    Text(t("\(f).destinations")).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 4)
                     VStack(spacing: 0) {
                         ForEach(Array(r.destinations.enumerated()), id: \.element.address) { i, d in
-                            if i > 0 { Rectangle().fill(LW.border).frame(height: 1) }
+                            if i > 0 { RowDivider().padding(.leading, -4) }
                             HStack {
-                                Text(d.address).font(.system(size: 13, design: .monospaced)).lineLimit(1).truncationMode(.middle)
+                                Text(d.address).font(.system(size: 13, design: .monospaced)).foregroundStyle(LW.foreground.opacity(0.9))
+                                    .lineLimit(1).truncationMode(.middle)
                                 Spacer()
                                 SettingsBadge(SettingsFormat.percent(bps: d.allocationBps))
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 12)
+                            .padding(.horizontal, 14).padding(.vertical, 12)
                         }
                     }
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+                    .lwInset()
                 }
             }
         } else {
             VStack(spacing: 8) {
-                Icon("git-branch", size: 32).foregroundStyle(LW.muted)
-                Text(t("\(f).noPlan")).font(LW.font(16, .medium))
+                Icon("git-branch", size: 28).foregroundStyle(LW.muted)
+                    .frame(width: 52, height: 52).background(Color.white.opacity(0.08), in: Circle())
+                Text(t("\(f).noPlan")).font(LW.font(16, .semibold)).foregroundStyle(LW.foreground)
                 Text(t("\(f).noPlanBody")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 24)
@@ -344,21 +332,21 @@ private struct ForwardingPanel: View {
 
     private func metric(_ label: String, _ value: String, accent: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(LW.font(12)).foregroundStyle(LW.muted)
-            Text(value).font(LW.font(16, .semibold)).foregroundStyle(accent ? LW.gold : LW.foreground).lineLimit(1).minimumScaleFactor(0.7)
+            Text(label).font(LW.font(13)).foregroundStyle(LW.muted)
+            Text(value).font(LW.font(17, .semibold)).monospacedDigit().foregroundStyle(accent ? LW.sun : LW.foreground)
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-        .background(LW.background.opacity(0.4)).clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+        .frame(maxWidth: .infinity, alignment: .leading).padding(14)
+        .lwInset()
     }
 
     @ViewBuilder private var receiptList: some View {
         if let receipts, receipts.isEmpty {
             Text(t("\(f).activityEmpty")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
         } else if let receipts {
-            VStack(spacing: 12) { ForEach(receipts) { receiptRow($0) } }
+            VStack(spacing: 10) { ForEach(receipts) { receiptRow($0) } }
         } else {
-            ProgressView().frame(maxWidth: .infinity, minHeight: 80)
+            ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 80)
         }
     }
 
@@ -367,8 +355,8 @@ private struct ForwardingPanel: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(SettingsFormat.msats(r.grossAmountMsats)).font(LW.font(15, .semibold)).monospacedDigit()
-                    Text(SettingsFormat.dateTime(r.sourceSettledAt)).font(LW.font(12)).foregroundStyle(LW.muted)
+                    Text(SettingsFormat.msats(r.grossAmountMsats)).font(LW.font(16, .semibold)).monospacedDigit().foregroundStyle(LW.foreground)
+                    Text(SettingsFormat.dateTime(r.sourceSettledAt)).font(LW.font(13)).foregroundStyle(LW.muted)
                 }
                 Spacer()
                 SettingsBadge(SettingsFormat.status(r.status), SettingsFormat.tone(r.status))
@@ -377,10 +365,11 @@ private struct ForwardingPanel: View {
                 Text(t("\(f).forwarded") + " " + SettingsFormat.msats(r.forwardedAmountMsats))
                 Text(t("\(f).feeRetained") + " " + SettingsFormat.msats(r.retainedFeeMsats))
             }
-            .font(LW.font(12)).foregroundStyle(LW.muted)
+            .font(LW.font(13)).foregroundStyle(LW.muted)
             ForEach(r.legs) { leg in
                 HStack(spacing: 8) {
-                    Text(leg.destination).font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
+                    Text(leg.destination).font(.system(size: 12, design: .monospaced)).foregroundStyle(LW.foreground.opacity(0.85))
+                        .lineLimit(1).truncationMode(.middle)
                     Spacer()
                     SettingsBadge(SettingsFormat.status(leg.status), SettingsFormat.tone(leg.status))
                 }
@@ -391,14 +380,13 @@ private struct ForwardingPanel: View {
                 Button { Task { await retry(r) } } label: {
                     HStack(spacing: 6) { Icon("rotate-ccw", size: 14); Text(t("\(f).retryFailedLegs")) }
                 }
-                .buttonStyle(.lw(.outline, height: 32, fullWidth: false))
+                .buttonStyle(.lw(.outline, height: 34, fullWidth: false))
                 .disabled(busy)
                 .accessibilityIdentifier("forwarding.retry.\(r.id)")
             }
         }
-        .padding(12)
-        .background(LW.background.opacity(0.35)).clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+        .padding(14)
+        .lwInset(14)
     }
 
     // MARK: actions
@@ -486,17 +474,14 @@ private struct ForwardingConfigSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(t("\(f).configTitle")).font(LW.font(20, .semibold))
-                        Text(t("\(f).configBody")).font(LW.font(14)).foregroundStyle(LW.muted)
-                    }
+                VStack(alignment: .leading, spacing: 20) {
+                    SheetTitle(title: t("\(f).configTitle"), message: t("\(f).configBody"))
                     HStack(spacing: 12) {
                         field(t("\(f).percentageFee"), $fee, suffix: "%", keyboard: .decimalPad)
                         field(t("\(f).baseFee"), $baseFee, suffix: "sats", keyboard: .numberPad)
                     }
                     HStack {
-                        Text(t("\(f).destinations")).font(LW.font(14, .medium))
+                        Text(t("\(f).destinations")).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 6)
                         Spacer()
                         SettingsBadge(String(format: "%.2f%%", total), valid ? .secondary : .destructive)
                     }
@@ -508,40 +493,42 @@ private struct ForwardingConfigSheet: View {
                                 .accessibilityIdentifier("forwarding.destination.\(n)")
                             LWTextField(placeholder: "%", text: $row.percent).keyboardType(.decimalPad).frame(width: 84)
                                 .accessibilityLabel(t("\(f).allocationN", ["n": "\(n)"]))
-                            Button { rows.removeAll { $0.id == row.id } } label: { Icon("trash-2", size: 16).foregroundStyle(LW.muted).frame(width: 36, height: 44) }
+                            GlassIconButton(icon: "trash-2", size: 44, label: t("\(f).removeDestination")) { rows.removeAll { $0.id == row.id } }
                                 .disabled(rows.count == 1)
-                                .accessibilityLabel(t("\(f).removeDestination"))
+                                .opacity(rows.count == 1 ? 0.4 : 1)
                         }
                     }
                     Button { rows.append(Row(address: "", percent: "0")) } label: {
                         HStack(spacing: 6) { Icon("plus", size: 14); Text(t("\(f).addDestination")) }
                     }
-                    .buttonStyle(.lw(.outline, height: 36, fullWidth: false))
+                    .buttonStyle(.lw(.secondary, height: 40, fullWidth: false))
                     ErrorText(message: error).frame(maxWidth: .infinity)
                 }
-                .padding(20)
+                .padding(.horizontal, 20).padding(.top, 28).padding(.bottom, 20)
             }
-            HStack(spacing: 12) {
-                Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.outline))
-                Button { Task { await save() } } label: {
-                    HStack(spacing: 8) {
-                        if saving { ProgressView().tint(LW.foreground) }
-                        Text(t(action.enabled ? "\(f).saveChanges" : "\(f).saveAndEnable"))
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
+            BottomBar {
+                HStack(spacing: 12) {
+                    Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.secondary))
+                    Button { Task { await save() } } label: {
+                        HStack(spacing: 8) {
+                            if saving { ProgressView().tint(LW.foreground) }
+                            Text(t(action.enabled ? "\(f).saveChanges" : "\(f).saveAndEnable"))
+                        }
                     }
+                    .buttonStyle(.lw(.theme))
+                    .disabled(!valid || saving)
+                    .accessibilityIdentifier("forwarding.save")
                 }
-                .buttonStyle(.lw(.theme))
-                .disabled(!valid || saving)
-                .accessibilityIdentifier("forwarding.save")
             }
-            .padding(.horizontal, 20).padding(.vertical, 12)
         }
     }
 
     private func field(_ label: String, _ text: Binding<String>, suffix: String, keyboard: UIKeyboardType) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label).font(LW.font(14, .medium))
+        SheetField(label: label) {
             LWTextField(placeholder: "0", text: text).keyboardType(keyboard)
-                .overlay(alignment: .trailing) { Text(suffix).font(LW.font(13)).foregroundStyle(LW.muted).padding(.trailing, 12) }
+                .overlay(alignment: .trailing) { Text(suffix).font(LW.font(13)).foregroundStyle(LW.muted).padding(.trailing, 16) }
         }
     }
 
@@ -590,45 +577,46 @@ private struct NotificationsPanel: View {
                     .accessibilityIdentifier("notifications.add")
             }
             .padding(20)
-            Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
+            PanelDivider()
 
             Group {
                 if let items, items.isEmpty {
                     VStack(spacing: 8) {
-                        Icon("bell", size: 32).foregroundStyle(LW.muted)
-                        Text(t("\(n).emptyTitle")).font(LW.font(16, .medium))
+                        Icon("bell", size: 26).foregroundStyle(LW.muted)
+                            .frame(width: 52, height: 52).background(Color.white.opacity(0.08), in: Circle())
+                        Text(t("\(n).emptyTitle")).font(LW.font(16, .semibold)).foregroundStyle(LW.foreground)
                         Text(t("\(n).emptyBody")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 32)
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.border, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    .frame(maxWidth: .infinity).padding(.vertical, 20)
                 } else if let items {
-                    VStack(spacing: 12) { ForEach(items) { card($0) } }
+                    VStack(spacing: 10) { ForEach(items) { card($0) } }
                 } else if failed {
                     Text(t("\(n).unavailable")).font(LW.font(14)).foregroundStyle(LW.destructiveText)
                 } else {
-                    ProgressView().frame(maxWidth: .infinity, minHeight: 80)
+                    ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 80)
                 }
             }
             .padding(20)
 
-            Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
+            PanelDivider()
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(t("\(n).journal")).font(LW.font(14, .semibold))
-                    Text(t("\(n).journalBody")).font(LW.font(12)).foregroundStyle(LW.muted)
+                    Text(t("\(n).journal")).font(LW.font(15, .semibold)).foregroundStyle(LW.foreground)
+                    Text(t("\(n).journalBody")).font(LW.font(13)).foregroundStyle(LW.muted)
                 }
                 Spacer()
                 HStack(spacing: 6) { Icon("radio", size: 14).foregroundStyle(LW.incoming); Text(t("remoteWallets.live")) }
-                    .font(LW.font(12)).foregroundStyle(LW.muted)
+                    .font(LW.font(12, .semibold)).foregroundStyle(LW.incoming)
+                    .padding(.horizontal, 9).padding(.vertical, 4).background(LW.incoming.opacity(0.16), in: Capsule())
             }
             .padding(.horizontal, 20).padding(.vertical, 16)
             if deliveries.isEmpty {
                 Text(t("\(n).journalEmpty")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity).padding(.horizontal, 20).padding(.vertical, 32)
+                    .frame(maxWidth: .infinity).padding(.horizontal, 20).padding(.bottom, 28).padding(.top, 8)
             } else {
-                ForEach(deliveries, id: \.0.id) { d, rule in
-                    Rectangle().fill(LW.border.opacity(0.6)).frame(height: 1)
-                    deliveryRow(d, rule)
+                ForEach(Array(deliveries.enumerated()), id: \.element.0.id) { i, pair in
+                    if i > 0 { RowDivider().padding(.leading, 50) }
+                    deliveryRow(pair.0, pair.1)
                 }
             }
         }
@@ -636,7 +624,6 @@ private struct NotificationsPanel: View {
         .task(id: token) { await load() }
         .sheet(isPresented: $createOpen) {
             CreateNotificationSheet(walletId: walletId) { items = $0 }
-                .presentationBackground(LW.background)
         }
     }
 
@@ -647,11 +634,10 @@ private struct NotificationsPanel: View {
         let triggerKey = "\(n).trigger.\(rule.action)"
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                Icon(webhook ? "webhook" : "send", size: 16).foregroundStyle(tint).frame(width: 36, height: 36)
-                    .background(tint.opacity(0.1)).clipShape(RoundedRectangle(cornerRadius: 12))
+                SettingsIconTile(icon: webhook ? "webhook" : "send", color: tint, size: 36)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(rule.name).font(LW.font(14, .semibold)).lineLimit(1)
+                        Text(rule.name).font(LW.font(15, .semibold)).foregroundStyle(LW.foreground).lineLimit(1)
                         SettingsBadge(t(rule.enabled ? "remoteWallets.live" : "remoteWallets.paused"), rule.enabled ? .success : .secondary)
                     }
                     Text(webhook ? rule.webhookUrl ?? "" : t("\(n).kind", ["n": rule.nostrKind.map(String.init) ?? ""]))
@@ -659,11 +645,11 @@ private struct NotificationsPanel: View {
                 }
                 Spacer(minLength: 0)
                 Button(t(rule.enabled ? "remoteWallets.pause" : "remoteWallets.resume")) { Task { await toggle(rule) } }
-                    .buttonStyle(.lw(.outline, height: 32, fullWidth: false))
+                    .buttonStyle(.lw(.outline, height: 34, fullWidth: false))
                     .disabled(busy)
                     .accessibilityIdentifier("notifications.toggle.\(rule.id)")
             }
-            Rectangle().fill(LW.border).frame(height: 1)
+            RowDivider().padding(.leading, -18)
             HStack(spacing: 6) {
                 SettingsBadge(L10n.shared.has(triggerKey) ? t(triggerKey) : "On \(rule.action.lowercased())", .outline)
                 if rule.nip44 { SettingsBadge("NIP-44", .outline, icon: "lock") }
@@ -672,22 +658,21 @@ private struct NotificationsPanel: View {
                     .font(LW.font(12)).foregroundStyle(LW.muted)
             }
         }
-        .padding(16)
-        .background(LW.background.opacity(0.35)).clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(LW.border))
+        .padding(14)
+        .lwInset(16)
         .opacity(rule.enabled ? 1 : 0.7)
     }
 
     private func deliveryRow(_ d: WalletNotification.Delivery, _ rule: WalletNotification) -> some View {
         let s = d.status.uppercased()
         let retryable = s == "REJECTED" || s == "EXPIRED" || (s == "UNKNOWN" && rule.channel == "NOSTR")
-        let tint: Color = s == "SUCCEEDED" ? LW.incoming : s == "UNKNOWN" ? LW.gold : (s == "REJECTED" || s == "EXPIRED") ? LW.destructiveText : LW.muted
+        let tint: Color = s == "SUCCEEDED" ? LW.incoming : s == "UNKNOWN" ? LW.sun : (s == "REJECTED" || s == "EXPIRED") ? LW.coral : LW.muted
         return HStack(alignment: .top, spacing: 12) {
             Icon(s == "SUCCEEDED" ? "check-circle-2" : "clock", size: 16).foregroundStyle(tint).frame(width: 36, height: 36)
-                .background(tint.opacity(0.1)).clipShape(Circle())
+                .background(tint.opacity(0.16), in: Circle())
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(rule.name).font(LW.font(14, .medium)).lineLimit(1)
+                    Text(rule.name).font(LW.font(14, .medium)).foregroundStyle(LW.foreground).lineLimit(1)
                     SettingsBadge(SettingsFormat.status(d.status), SettingsFormat.tone(d.status))
                     SettingsBadge(d.action, .outline)
                 }
@@ -695,14 +680,14 @@ private struct NotificationsPanel: View {
                     .font(LW.font(12)).foregroundStyle(LW.muted).lineLimit(2)
                 if retryable {
                     Button { Task { await retry(d) } } label: { HStack(spacing: 6) { Icon("rotate-ccw", size: 14); Text(t("common.retry")) } }
-                        .buttonStyle(.lw(.outline, height: 32, fullWidth: false))
+                        .buttonStyle(.lw(.outline, height: 34, fullWidth: false))
                         .disabled(busy)
                         .accessibilityIdentifier("notifications.retry.\(d.id)")
                 }
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20).padding(.vertical, 16)
+        .padding(.horizontal, 20).padding(.vertical, 14)
     }
 
     private func load() async {
@@ -755,33 +740,26 @@ private struct CreateNotificationSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(t("\(n).addTitle")).font(LW.font(20, .semibold))
-                        Text(t("\(n).addBody")).font(LW.font(14)).foregroundStyle(LW.muted)
-                    }
-                    HStack(spacing: 4) {
-                        segment("Webhook", "webhook", true)
-                        segment("Nostr", "send", false)
-                    }
-                    .padding(4).overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(LW.border))
-                    .accessibilityLabel(t("\(n).channelLabel"))
+                VStack(alignment: .leading, spacing: 20) {
+                    SheetTitle(title: t("\(n).addTitle"), message: t("\(n).addBody"))
+                    GlassSegmented(items: [(true, "Webhook"), (false, "Nostr")], selection: $webhook, idPrefix: "notifications.channel", compact: false)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityLabel(t("\(n).channelLabel"))
                     field(t("\(n).name")) {
                         LWTextField(placeholder: t("\(n).namePlaceholder"), text: $name).accessibilityIdentifier("notifications.name")
                     }
                     field(t("\(n).action")) {
-                        Picker(t("\(n).action"), selection: $action) {
-                            Text(t("\(n).actionReceived")).tag("RECEIVED")
-                            Text(t("\(n).actionForwarded")).tag("FORWARDED")
-                        }
-                        .pickerStyle(.segmented)
+                        GlassSegmented(items: [("RECEIVED", t("\(n).actionReceived")), ("FORWARDED", t("\(n).actionForwarded"))],
+                                       selection: $action, idPrefix: "notifications.action")
+                            .accessibilityElement(children: .contain)
+                            .accessibilityLabel(t("\(n).action"))
                     }
                     if webhook {
                         field(t("\(n).endpoint")) {
                             LWTextField(placeholder: "https://example.com/hooks/wallet", text: $url).keyboardType(.URL)
                                 .accessibilityIdentifier("notifications.url")
                             Text("\(t("\(n).webhookHint.before")) `Idempotency-Key` \(t("\(n).webhookHint.and")) `X-LaWallet-Event`\(t("\(n).webhookHint.after"))")
-                                .font(LW.font(12)).foregroundStyle(LW.muted)
+                                .font(LW.font(13)).foregroundStyle(LW.muted).padding(.horizontal, 6)
                         }
                     } else {
                         HStack(alignment: .top, spacing: 12) {
@@ -789,56 +767,48 @@ private struct CreateNotificationSheet: View {
                             field(t("\(n).pTag")) { LWTextField(placeholder: "npub1…", text: $pTag) }
                         }
                         field(t("\(n).relays")) {
-                            TextEditor(text: $relays).font(.system(size: 14, design: .monospaced)).scrollContentBackground(.hidden)
+                            TextEditor(text: $relays).font(.system(size: 14, design: .monospaced)).foregroundStyle(LW.foreground)
+                                .scrollContentBackground(.hidden)
                                 .textInputAutocapitalization(.never).autocorrectionDisabled()
-                                .frame(minHeight: 96).padding(8).background(LW.background)
-                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+                                .frame(minHeight: 96).padding(.horizontal, 12).padding(.vertical, 8)
+                                .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
                         }
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(t("\(n).encrypt")).font(LW.font(14, .medium))
-                                Text(t("\(n).encryptHint")).font(LW.font(12)).foregroundStyle(LW.muted)
+                                Text(t("\(n).encrypt")).font(LW.font(15, .medium)).foregroundStyle(LW.foreground)
+                                Text(t("\(n).encryptHint")).font(LW.font(13)).foregroundStyle(LW.muted)
                             }
                             Spacer()
-                            Toggle("", isOn: $nip44).labelsHidden()
+                            Toggle("", isOn: $nip44).labelsHidden().tint(theme.preset.primary)
                         }
-                        .padding(12).overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .lwSurface(LW.Radius.control)
                     }
                     ErrorText(message: error).frame(maxWidth: .infinity)
                 }
-                .padding(20)
+                .padding(.horizontal, 20).padding(.top, 28).padding(.bottom, 20)
             }
-            HStack(spacing: 12) {
-                Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.outline))
-                Button { Task { await create() } } label: {
-                    HStack(spacing: 8) {
-                        if saving { ProgressView().tint(LW.foreground) }
-                        Text(t("\(n).create"))
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
+            BottomBar {
+                HStack(spacing: 12) {
+                    Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.secondary))
+                    Button { Task { await create() } } label: {
+                        HStack(spacing: 8) {
+                            if saving { ProgressView().tint(LW.foreground) }
+                            Text(t("\(n).create"))
+                        }
                     }
+                    .buttonStyle(.lw(.theme))
+                    .disabled(saving)
+                    .accessibilityIdentifier("notifications.create")
                 }
-                .buttonStyle(.lw(.theme))
-                .disabled(saving)
-                .accessibilityIdentifier("notifications.create")
             }
-            .padding(.horizontal, 20).padding(.vertical, 12)
         }
     }
 
-    private func segment(_ label: String, _ icon: String, _ value: Bool) -> some View {
-        Button { webhook = value } label: {
-            HStack(spacing: 6) { Icon(icon, size: 14); Text(label).font(LW.font(13, .medium)) }
-                .frame(maxWidth: .infinity, minHeight: 36)
-                .foregroundStyle(webhook == value ? Color(hex: "0a0a0a") : LW.muted)
-                .background(webhook == value ? theme.preset.primary : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 7))
-        }
-    }
-
-    private func field<C: View>(_ label: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label).font(LW.font(14, .medium))
-            content()
-        }
+    private func field<C: View>(_ label: String, @ViewBuilder _ content: @escaping () -> C) -> some View {
+        SheetField(label: label, content: content)
     }
 
     private func create() async {

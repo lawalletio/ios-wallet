@@ -65,7 +65,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            LW.background.ignoresSafeArea()
+            LW.ink.ignoresSafeArea()
             if !app.bootstrapped {
                 LoadingScreen()
             } else if app.isAuthenticated {
@@ -91,7 +91,7 @@ struct AuthenticatedRoot: View {
         NavigationStack(path: $app.path) {
             HomeScreen()
                 .navigationDestination(for: Route.self) { route in
-                    route.view.toolbar(.hidden, for: .navigationBar).background(LW.background.ignoresSafeArea())
+                    route.view.toolbar(.hidden, for: .navigationBar).lwScreenBackground(route.ambientIntensity)
                 }
         }
         .task(id: app.isAuthenticated) {
@@ -110,8 +110,9 @@ struct OnboardingRoot: View {
     var body: some View {
         NavigationStack(path: $path) {
             LandingScreen(path: $path)
+                .lwScreenBackground(1)
                 .navigationDestination(for: AuthRoute.self) { route in
-                    route.view.toolbar(.hidden, for: .navigationBar).background(LW.background.ignoresSafeArea())
+                    route.view.toolbar(.hidden, for: .navigationBar).lwScreenBackground(route.ambientIntensity)
                 }
         }
         .environment(\.authPath, $path)
@@ -132,11 +133,15 @@ extension EnvironmentValues {
 
 struct LoadingScreen: View {
     var body: some View {
-        VStack(spacing: 24) {
-            Image("isotypo").resizable().scaledToFit().frame(height: 64)
-            ProgressView().tint(LW.muted)
+        VStack(spacing: 28) {
+            Image("isotypo").resizable().scaledToFit().frame(height: 58)
+                .frame(width: 112, height: 112)
+                .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.sheet, style: .continuous))
+                .shadow(color: LW.mint.opacity(0.35), radius: 40)
+            ProgressView().tint(LW.foreground.opacity(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AmbientBackground(intensity: 1))
         .accessibilityIdentifier("loading")
     }
 }

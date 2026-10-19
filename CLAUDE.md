@@ -13,3 +13,14 @@ truth for layout, copy and behavior — when changing a screen, read its web cou
 - Icons are lucide SVGs in `Assets.xcassets/Icons` (`Icon("name")`), generated from the web's `lucide-react`.
 - After adding files run `xcodegen generate`. Build with `-skipPackagePluginValidation`.
 - Swift 6 strict concurrency: UI state is `@Observable @MainActor`; Kit types are `Sendable`/actors.
+
+## Design language (Liquid Glass)
+
+- Surfaces: `.lwSurface(r)` (26 cards, 22 grouped lists), controls/chrome `.lwGlass(in:)`, recessed wells `.lwInset()`.
+  Never glass on glass — rows inside a surface are `RowDivider()`-separated. iOS 18–25 falls back to material automatically.
+- Buttons: `.buttonStyle(.lw(...))` only; icon buttons `GlassIconButton`; segments `GlassSegmented`. Glass ignores
+  `.opacity`, so disabled state is handled inside `LWButtonStyle` (tint dropped, label dimmed).
+- Background: never paint a screen background — routes add `AmbientBackground` (isotype mint/sun/coral light).
+  The only orchestrated motion is the payment bloom + the header pill morphing into the payment notice.
+- Clear-filled shapes under glass are not hit-testable: add `.contentShape(...)` on anything that takes gestures.
+- Labels are sentence case (no tracked ALL CAPS); hero numbers `LW.font(56–68, .semibold).tracking(-2).monospacedDigit()`.

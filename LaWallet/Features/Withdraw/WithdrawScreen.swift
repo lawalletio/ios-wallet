@@ -46,11 +46,12 @@ struct WithdrawScreen: View {
 
     private func confirm(_ p: LNURLWithdrawParams) -> some View {
         let canAutoCreate = app.settings?.lncurlAutoCreate == true || app.settings?.lncurlEnabled == true
+        let hasTarget = app.wallet.hasWallet || canAutoCreate
         return VStack(spacing: 0) {
             ScreenHeader(title: t("withdraw.title"), close: true)
             VStack(spacing: 16) {
                 voucher(p)
-                if !app.wallet.hasWallet && !canAutoCreate {
+                if !hasTarget {
                     noWallet
                 } else {
                     VStack(spacing: 8) {
@@ -59,57 +60,60 @@ struct WithdrawScreen: View {
                         } else {
                             AmountDisplay(value: value, unit: "sats").padding(.vertical, -16)
                             Text(t("withdraw.range", ["min": p.minWithdrawableSats.formatted(), "max": p.maxWithdrawableSats.formatted()]))
-                                .font(LW.font(12)).foregroundStyle(LW.muted)
+                                .font(LW.font(13)).foregroundStyle(LW.muted)
                         }
                     }
                     Spacer(minLength: 0)
                     if !fixed(p) {
                         AmountKeypad(value: Binding(get: { value }, set: { value = $0; error = nil }), decimals: 0)
                     }
-                    VStack(spacing: 8) {
-                        ErrorText(message: error)
-                        Button { Task { await claim(p) } } label: {
-                            HStack(spacing: 8) {
-                                Icon("arrow-down-to-line", size: 16)
-                                Text(amount(p).map { t("withdraw.ctaAmount", ["amount": $0.formatted()]) } ?? t("withdraw.cta"))
-                            }
-                        }
-                        .buttonStyle(.lw(.primary))
-                        .disabled(!valid(p))
-                        .accessibilityIdentifier("withdraw.claim")
-                    }
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.top, 4)
             .frame(maxHeight: .infinity, alignment: .top)
+            if hasTarget {
+                BottomBar {
+                    ErrorText(message: error)
+                    Button { Task { await claim(p) } } label: {
+                        HStack(spacing: 8) {
+                            Icon("arrow-down-to-line", size: 16)
+                            Text(amount(p).map { t("withdraw.ctaAmount", ["amount": $0.formatted()]) } ?? t("withdraw.cta"))
+                        }
+                    }
+                    .buttonStyle(.lw(.primary))
+                    .disabled(!valid(p))
+                    .accessibilityIdentifier("withdraw.claim")
+                }
+            }
         }
     }
 
+    /// Voucher as sun-tinted glass: the gold accent says "free sats" before the celebration does.
     private func voucher(_ p: LNURLWithdrawParams) -> some View {
-        HStack(spacing: 12) {
-            Icon("arrow-down-to-line").foregroundStyle(LW.muted).frame(width: 48, height: 48)
-                .background(LW.background).clipShape(Circle()).overlay(Circle().strokeBorder(LW.border.opacity(0.7)))
+        HStack(spacing: 14) {
+            Icon("gift", size: 20).foregroundStyle(LW.sun).frame(width: 46, height: 46)
+                .background(LW.sun.opacity(0.14), in: Circle())
+                .overlay(Circle().strokeBorder(LW.sun.opacity(0.22), lineWidth: 0.5))
             VStack(alignment: .leading, spacing: 2) {
-                Text(t("withdraw.from").uppercased()).font(LW.font(12, .medium)).tracking(1.6).foregroundStyle(LW.muted)
-                Text(p.host.isEmpty ? t("withdraw.voucher") : p.host).font(LW.font(16, .semibold)).lineLimit(1)
+                Text(t("withdraw.from")).font(LW.font(13, .semibold)).foregroundStyle(LW.muted)
+                Text(p.host.isEmpty ? t("withdraw.voucher") : p.host).font(LW.font(17, .semibold)).lineLimit(1)
                 if !p.defaultDescription.isEmpty {
-                    Text(p.defaultDescription).font(LW.font(12)).foregroundStyle(LW.muted).lineLimit(1)
+                    Text(p.defaultDescription).font(LW.font(13)).foregroundStyle(LW.muted).lineLimit(1)
                 }
             }
             Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(LW.card.opacity(0.8))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(LW.border.opacity(0.7)))
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.surface - 2, style: .continuous), tint: .color(LW.sun.opacity(0.10)))
         .accessibilityIdentifier("withdraw.voucher")
     }
 
     private var noWallet: some View {
         VStack(spacing: 12) {
-            Icon("wallet", size: 28).foregroundStyle(LW.muted).frame(width: 56, height: 56).background(LW.card).clipShape(Circle())
-            Text(t("withdraw.noWallet")).font(LW.font(16, .semibold))
-            Text(t("withdraw.noWalletBody")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+            Icon("wallet", size: 26).foregroundStyle(LW.muted).frame(width: 64, height: 64).lwGlass(in: Circle())
+                .padding(.bottom, 4)
+            Text(t("withdraw.noWallet")).font(LW.font(18, .semibold))
+            Text(t("withdraw.noWalletBody")).font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
             Button(t("withdraw.manageWallets")) { app.navigate(.remoteWallets) }
                 .buttonStyle(.lw(.secondary, fullWidth: false))
         }

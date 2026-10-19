@@ -16,8 +16,8 @@ struct ScanScreen: View {
     @State private var photo: PhotosPickerItem?
 
     var body: some View {
+        // No backdrop of its own: the route's ambient light runs at 0 here (plain ink), the camera fills the screen.
         ZStack {
-            Color.black.ignoresSafeArea()
             if camera == .granted {
                 QRScannerView(paused: resolving || foreign != nil, torch: torch) { text in Task { await handle(text) } }
                     .ignoresSafeArea()
@@ -36,12 +36,14 @@ struct ScanScreen: View {
                 footer
             }
             if resolving {
-                VStack(spacing: 12) {
+                VStack(spacing: 14) {
                     ProgressView().controlSize(.large).tint(.white)
-                    Text(t("scan.readingCode")).font(LW.font(14)).foregroundStyle(LW.muted)
+                    Text(t("scan.readingCode")).font(LW.font(15, .medium)).foregroundStyle(LW.foreground.opacity(0.85))
                 }
+                .padding(.horizontal, 32).padding(.vertical, 26)
+                .lwSurface()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black.opacity(0.7))
+                .background(Color.black.opacity(0.55))
                 .accessibilityIdentifier("scan.resolving")
             }
         }
@@ -61,25 +63,26 @@ struct ScanScreen: View {
 
     private var header: some View {
         ZStack {
-            Text(t("scan.title")).font(LW.font(16, .medium)).foregroundStyle(.white)
+            Text(t("scan.title")).font(LW.font(17, .semibold)).foregroundStyle(.white).shadow(color: .black.opacity(0.4), radius: 8)
             HStack {
-                Button { if !app.path.isEmpty { app.path.removeLast() } } label: {
-                    Icon("x").foregroundStyle(.white).frame(width: 40, height: 40).background(.black.opacity(0.35)).clipShape(Circle())
-                }
-                .accessibilityLabel(t("common.close"))
-                .accessibilityIdentifier("scan.close")
+                GlassIconButton(icon: "x", label: t("common.close")) { if !app.path.isEmpty { app.path.removeLast() } }
+                    .accessibilityIdentifier("scan.close")
                 Spacer()
                 if camera == .granted && QRScannerView.hasTorch {
+                    // GlassIconButton with an on state: frosted light glass + ink icon while the torch is lit.
                     Button { torch.toggle() } label: {
-                        Icon("flashlight").foregroundStyle(torch ? .black : .white).frame(width: 40, height: 40)
-                            .background(torch ? Color.white : Color.black.opacity(0.35)).clipShape(Circle())
+                        Icon("flashlight", size: 18).foregroundStyle(torch ? LW.ink : LW.foreground)
+                            .frame(width: 44, height: 44).contentShape(Circle())
                     }
+                    .buttonStyle(.plain)
+                    .lwGlass(in: Circle(), tint: torch ? .light : .none, interactive: true)
                     .accessibilityLabel(t("ios.pay.torch"))
+                    .accessibilityAddTraits(torch ? .isSelected : [])
                     .accessibilityIdentifier("scan.torch")
                 }
             }
         }
-        .padding(.horizontal, 12).frame(height: 56)
+        .padding(.horizontal, 16).frame(height: 60)
     }
 
     private var viewfinder: some View {
@@ -89,13 +92,15 @@ struct ScanScreen: View {
             ZStack {
                 Path { p in
                     p.addRect(CGRect(origin: .zero, size: geo.size))
-                    p.addRoundedRect(in: hole, cornerSize: CGSize(width: 24, height: 24))
+                    p.addRoundedRect(in: hole, cornerSize: CGSize(width: 28, height: 28), style: .circular)
                 }
                 .fill(Color.black.opacity(0.45), style: FillStyle(eoFill: true))
-                RoundedRectangle(cornerRadius: 24).strokeBorder(Color.white.opacity(0.5), lineWidth: 2)
+                ViewfinderCorners(radius: 28)
+                    .stroke(Color.white, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                     .frame(width: side, height: side).position(x: hole.midX, y: hole.midY)
-                Text(t("scan.hint")).font(LW.font(14)).foregroundStyle(.white.opacity(0.8)).multilineTextAlignment(.center)
-                    .frame(width: side + 40).position(x: hole.midX, y: hole.maxY + 36)
+                    .shadow(color: .black.opacity(0.25), radius: 6)
+                Text(t("scan.hint")).font(LW.font(15, .medium)).foregroundStyle(.white.opacity(0.85)).multilineTextAlignment(.center)
+                    .frame(width: side + 40).position(x: hole.midX, y: hole.maxY + 38)
             }
         }
         .ignoresSafeArea()
@@ -103,40 +108,43 @@ struct ScanScreen: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 8) {
-            if NFCReader.isAvailable {
-                Button { Task { await readCard() } } label: {
-                    Label { Text(t("ios.nfc.claimCard")) } icon: { Icon("nfc", size: 16) }
+        GlassGroup(spacing: 10) {
+            VStack(spacing: 10) {
+                if NFCReader.isAvailable {
+                    Button { Task { await readCard() } } label: {
+                        Label { Text(t("ios.nfc.claimCard")) } icon: { Icon("nfc", size: 16) }
+                    }
+                    .buttonStyle(.lw(.secondary))
+                    .accessibilityIdentifier("scan.nfc")
                 }
-                .buttonStyle(.lw(.secondary))
-                .accessibilityIdentifier("scan.nfc")
+                // Works with no camera at all (simulator) and for QR screenshots on a phone.
+                PhotosPicker(selection: $photo, matching: .images) {
+                    Label { Text(t("ios.pay.scanPhoto")) } icon: { Icon("image", size: 16) }
+                }
+                .buttonStyle(.lw(camera == .granted ? .secondary : .theme))
+                .accessibilityIdentifier("scan.photo")
+                // PasteButton reads the clipboard without the iOS "Allow Paste" prompt.
+                PasteButton(payloadType: String.self) { strings in
+                    guard let text = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
+                    Task { @MainActor in await handle(text, force: true) }
+                }
+                .labelStyle(.titleAndIcon)
+                .buttonBorderShape(.capsule)
+                .controlSize(.large)
+                .lwSystemGlass()
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("scan.paste")
             }
-            // Works with no camera at all (simulator) and for QR screenshots on a phone.
-            PhotosPicker(selection: $photo, matching: .images) {
-                Label { Text(t("ios.pay.scanPhoto")) } icon: { Icon("image", size: 16) }
-            }
-            .buttonStyle(.lw(camera == .granted ? .secondary : .theme))
-            .accessibilityIdentifier("scan.photo")
-            // PasteButton reads the clipboard without the iOS "Allow Paste" prompt.
-            PasteButton(payloadType: String.self) { strings in
-                guard let text = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return }
-                Task { @MainActor in await handle(text, force: true) }
-            }
-            .labelStyle(.titleAndIcon)
-            .buttonBorderShape(.roundedRectangle(radius: 12))
-            .tint(LW.secondary)
-            .frame(maxWidth: .infinity)
-            .accessibilityIdentifier("scan.paste")
         }
         .disabled(resolving)
-        .padding(.horizontal, 16).padding(.bottom, 16)
+        .padding(.horizontal, 20).padding(.top, 10).padding(.bottom, 10)
     }
 
     private func status(_ icon: String, _ title: String, detail: String? = nil) -> some View {
-        VStack(spacing: 12) {
-            Icon(icon, size: 40).foregroundStyle(LW.muted)
-            Text(title).font(LW.font(16, .semibold)).foregroundStyle(.white)
-            if let detail { Text(detail).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center) }
+        VStack(spacing: 14) {
+            Icon(icon, size: 30).foregroundStyle(LW.muted).frame(width: 72, height: 72).lwGlass(in: Circle())
+            Text(title).font(LW.font(18, .semibold)).foregroundStyle(.white)
+            if let detail { Text(detail).font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center) }
         }
         .padding(.horizontal, 32)
         .accessibilityIdentifier("scan.status")
@@ -203,5 +211,28 @@ struct ScanScreen: View {
             Haptics.error()
             app.show(.error, message)
         }
+    }
+}
+
+/// Four rounded corner brackets around the scan hole (stroke centered on the hole's edge).
+private struct ViewfinderCorners: Shape {
+    var radius: CGFloat = 28
+    var length: CGFloat = 46
+
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        // (start, corner, end) per corner, clockwise from top-left.
+        let corners: [(CGPoint, CGPoint, CGPoint)] = [
+            (CGPoint(x: r.minX, y: r.minY + length), CGPoint(x: r.minX, y: r.minY), CGPoint(x: r.minX + length, y: r.minY)),
+            (CGPoint(x: r.maxX - length, y: r.minY), CGPoint(x: r.maxX, y: r.minY), CGPoint(x: r.maxX, y: r.minY + length)),
+            (CGPoint(x: r.maxX, y: r.maxY - length), CGPoint(x: r.maxX, y: r.maxY), CGPoint(x: r.maxX - length, y: r.maxY)),
+            (CGPoint(x: r.minX + length, y: r.maxY), CGPoint(x: r.minX, y: r.maxY), CGPoint(x: r.minX, y: r.maxY - length))
+        ]
+        for (start, corner, end) in corners {
+            p.move(to: start)
+            p.addArc(tangent1End: corner, tangent2End: end, radius: radius)
+            p.addLine(to: end)
+        }
+        return p
     }
 }

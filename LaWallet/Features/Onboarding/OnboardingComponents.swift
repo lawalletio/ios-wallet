@@ -1,7 +1,8 @@
 import LaWalletKit
 import SwiftUI
 
-/// Signed-out page shell (`(auth)/layout.tsx`): optional back header + 24 pt gutters.
+/// Signed-out page shell (`(auth)/layout.tsx`): optional glass back header, content capped at 480 pt.
+/// Screens pad their own 20 pt gutters so scroll content can dissolve under the chrome; actions go in `BottomBar`.
 struct OnbPage<Content: View>: View {
     var back = true
     @ViewBuilder var content: () -> Content
@@ -9,7 +10,6 @@ struct OnbPage<Content: View>: View {
         VStack(spacing: 0) {
             if back { ScreenHeader(title: nil) }
             VStack(spacing: 0) { content() }
-                .padding(.horizontal, 24).padding(.bottom, 24)
                 .frame(maxWidth: 480, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -22,10 +22,13 @@ struct OnbHeading: View {
     var subtitle: String?
     var centered = false
     var body: some View {
-        VStack(alignment: centered ? .center : .leading, spacing: 8) {
-            Text(title).font(LW.font(24, .semibold)).foregroundStyle(LW.foreground)
+        VStack(alignment: centered ? .center : .leading, spacing: 10) {
+            Text(title).font(LW.font(30, .bold)).tracking(-0.6).foregroundStyle(LW.foreground)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
             if let subtitle {
-                Text(subtitle).font(LW.font(14)).foregroundStyle(LW.muted).lineSpacing(3)
+                Text(subtitle).font(LW.font(15)).foregroundStyle(LW.muted).lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .multilineTextAlignment(centered ? .center : .leading)
@@ -51,7 +54,7 @@ struct OnbError: View {
     let message: String?
     var body: some View {
         if let message, !message.isEmpty {
-            Text(message).font(LW.font(12)).foregroundStyle(LW.destructiveText).frame(maxWidth: .infinity, alignment: .leading)
+            Text(message).font(LW.font(13, .medium)).foregroundStyle(LW.destructiveText).frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("error.text")
         }
     }
@@ -106,41 +109,50 @@ struct OnbSecretKeyReveal: View {
     @State private var copied = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Text(nsec)
-                    .font(.system(size: 12, design: .monospaced)).foregroundStyle(LW.foreground)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .blur(radius: revealed ? 0 : 4)
-                    .accessibilityIdentifier("\(idPrefix).nsec")
-                Button { revealed.toggle() } label: {
-                    Icon(revealed ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+        // One glass surface: the key sits in a recessed well, copy is a frosted chip, the backup confirm is a hairline row.
+        VStack(spacing: 0) {
+            VStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 8) {
+                    Text(nsec)
+                        .font(.system(size: 13, design: .monospaced)).foregroundStyle(LW.foreground)
+                        .lineSpacing(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .blur(radius: revealed ? 0 : 5)
+                        .accessibilityIdentifier("\(idPrefix).nsec")
+                    Button { withAnimation(.snappy) { revealed.toggle() } } label: {
+                        Icon(revealed ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(t(revealed ? "auth.hideKey" : "auth.revealKey"))
+                    .accessibilityIdentifier("\(idPrefix).reveal")
                 }
-                .accessibilityLabel(t(revealed ? "auth.hideKey" : "auth.revealKey"))
-                .accessibilityIdentifier("\(idPrefix).reveal")
-            }
-            .padding(.leading, 16).padding(.trailing, 8).padding(.vertical, 8)
-            .background(LW.card)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(LW.border))
+                .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 10)
+                .lwInset()
 
-            Button(action: copy) { OnbIconText(icon: copied ? "check" : "copy", text: copied ? t("common.copied") : t("auth.copyKey")) }
-                .buttonStyle(.lw(.secondary, height: 40))
+                Button(action: copy) {
+                    OnbIconText(icon: copied ? "check" : "copy", text: copied ? t("common.copied") : t("auth.copyKey"))
+                        .font(LW.font(15, .semibold)).foregroundStyle(LW.foreground)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(Color.white.opacity(0.08), in: Capsule())
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(PressScale())
                 .disabled(disabled)
+                .opacity(disabled ? 0.42 : 1)
                 .accessibilityIdentifier("\(idPrefix).copy")
+            }
+            .padding(14)
 
             if let confirmed {
+                RowDivider()
                 Button { confirmed.wrappedValue.toggle(); Haptics.tap() } label: {
                     HStack(alignment: .top, spacing: 12) {
-                        OnbCheckbox(on: confirmed.wrappedValue).padding(.top, 2)
-                        Text(confirmLabel ?? t("auth.savedKeyConfirm")).font(LW.font(14)).foregroundStyle(LW.foreground)
+                        OnbCheckbox(on: confirmed.wrappedValue).padding(.top, 1)
+                        Text(confirmLabel ?? t("auth.savedKeyConfirm")).font(LW.font(15)).foregroundStyle(LW.foreground)
                             .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(16)
+                    .padding(.horizontal, 16).padding(.vertical, 16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(LW.card.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(LW.border))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -149,6 +161,7 @@ struct OnbSecretKeyReveal: View {
                 .accessibilityIdentifier("\(idPrefix).backedUp")
             }
         }
+        .lwSurface(LW.Radius.surface - 4)
     }
 
     private func copy() {
@@ -166,11 +179,12 @@ struct OnbSecretKeyReveal: View {
 struct OnbCheckbox: View {
     let on: Bool
     var body: some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous)
-            .fill(on ? LW.foreground : .clear)
-            .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(on ? LW.foreground : LW.ring))
-            .overlay { if on { Icon("check", size: 12).foregroundStyle(LW.background) } }
-            .frame(width: 16, height: 16)
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(on ? LW.foreground : Color.white.opacity(0.06))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(on ? LW.foreground : LW.ring, lineWidth: 1))
+            .overlay { if on { Icon("check", size: 13).foregroundStyle(LW.ink) } }
+            .frame(width: 20, height: 20)
+            .animation(.snappy(duration: 0.2), value: on)
     }
 }
 
@@ -202,7 +216,8 @@ struct OnbPasskeyButton: View {
                 .accessibilityIdentifier(id)
                 OnbError(message: error)
                 if showCrossDeviceHint {
-                    Text(t("auth.crossDeviceHint")).font(LW.font(12)).foregroundStyle(LW.muted).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(t("auth.crossDeviceHint")).font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -246,23 +261,27 @@ struct OnbRevealField: View {
     @State private var shown = false
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous)
+        let prompt = Text(verbatim: placeholder).foregroundStyle(LW.muted.opacity(0.8))
         HStack(spacing: 4) {
             Group {
-                if shown { TextField(placeholder, text: $text) } else { SecureField(placeholder, text: $text) }
+                if shown { TextField("", text: $text, prompt: prompt) } else { SecureField("", text: $text, prompt: prompt) }
             }
             .font(.system(size: 15, design: .monospaced))
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .textContentType(.none)
+            .accessibilityLabel(placeholder)
             .accessibilityIdentifier(id)
             Button { shown.toggle() } label: {
-                Icon(shown ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+                Icon(shown ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 36, height: 36).contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .accessibilityLabel(t("auth.toggleKeyVisibility"))
         }
-        .padding(.leading, 14).padding(.trailing, 8).frame(minHeight: 52)
-        .background(LW.background)
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(invalid ? LW.destructiveText : LW.border))
+        .padding(.leading, 16).padding(.trailing, 8).frame(minHeight: 54)
+        .lwGlass(in: shape)
+        .overlay { if invalid { shape.strokeBorder(LW.destructiveText.opacity(0.8), lineWidth: 1) } }
         .foregroundStyle(LW.foreground)
     }
 }

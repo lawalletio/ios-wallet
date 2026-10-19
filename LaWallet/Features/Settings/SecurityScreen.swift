@@ -15,17 +15,17 @@ struct SecurityScreen: View {
         SettingsPage(title: t("settings.security")) {
             GroupBox(label: t("settings.account")) {
                 if let pk = app.pubkey {
-                    Button { copyNpub(pk) } label: { info(t("\(s).publicKey"), Self.truncateNpub(pk), icon: "user") }
+                    Button { copyNpub(pk) } label: { info(t("\(s).publicKey"), Self.truncateNpub(pk), icon: "user", tint: LW.mint, copy: true) }
                         .buttonStyle(.plain)
                         .accessibilityLabel(t("\(s).copyLabel", ["label": t("\(s).publicKey")]))
                         .accessibilityIdentifier("security.npub")
                 } else {
-                    info(t("\(s).publicKey"), t("\(s).notSignedIn"), icon: "user")
+                    info(t("\(s).publicKey"), t("\(s).notSignedIn"), icon: "user", tint: LW.mint)
                 }
-                RowDivider()
-                info(t("\(s).role"), roleLabel)
-                RowDivider()
-                info(t("\(s).loginMethod"), app.loginMethod.map { t("\(s).methods.\($0.rawValue)") } ?? t("\(s).unknown"))
+                SettingsRowDivider()
+                info(t("\(s).role"), roleLabel, icon: "shield", tint: LW.sun)
+                SettingsRowDivider()
+                info(t("\(s).loginMethod"), app.loginMethod.map { t("\(s).methods.\($0.rawValue)") } ?? t("\(s).unknown"), icon: "key-round")
             }
 
             SettingsSection(t("\(s).passkeys")) { PasskeysSection() }
@@ -41,7 +41,7 @@ struct SecurityScreen: View {
                             .accessibilityIdentifier("security.reveal")
                     }
                     Text(t(app.loginMethod == .passkey ? "\(s).passkeyKeyHint" : "\(s).nsecKeyHint"))
-                        .font(LW.font(12)).foregroundStyle(LW.muted).padding(.horizontal, 4)
+                        .font(LW.font(13)).foregroundStyle(LW.muted).padding(.horizontal, 6)
                 }
             }
 
@@ -66,17 +66,16 @@ struct SecurityScreen: View {
         return L10n.shared.has(key) ? t(key) : app.role.lowercased().capitalized
     }
 
-    private func info(_ label: String, _ value: String, icon: String? = nil) -> some View {
-        HStack(spacing: 12) {
-            if let icon {
-                Icon(icon).foregroundStyle(LW.muted).frame(width: 36, height: 36).background(LW.background)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            Text(label).font(LW.font(16, .medium))
+    private func info(_ label: String, _ value: String, icon: String, tint: Color = LW.foreground, copy: Bool = false) -> some View {
+        HStack(spacing: 14) {
+            SettingsIconTile(icon: icon, color: tint)
+            Text(label).font(LW.font(16, .medium)).foregroundStyle(LW.foreground)
             Spacer(minLength: 8)
-            Text(value).font(LW.font(14)).foregroundStyle(LW.muted).lineLimit(1).truncationMode(.middle)
+            Text(value).font(copy ? .system(size: 13, design: .monospaced) : LW.font(14)).foregroundStyle(LW.muted)
+                .lineLimit(1).truncationMode(.middle)
+            if copy { Icon("copy", size: 15).foregroundStyle(LW.muted.opacity(0.8)) }
         }
-        .padding(.horizontal, 16).frame(minHeight: 56).contentShape(Rectangle())
+        .padding(.horizontal, 18).frame(minHeight: 58).contentShape(Rectangle())
     }
 
     private func copyNpub(_ pk: String) {
@@ -108,17 +107,20 @@ struct SecretKeyReveal: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                Text(nsec).font(.system(size: 12, design: .monospaced)).foregroundStyle(LW.foreground)
+                Text(nsec).font(.system(size: 13, design: .monospaced)).foregroundStyle(LW.foreground)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .blur(radius: revealed ? 0 : 5)
+                    .animation(.easeOut(duration: 0.2), value: revealed)
                     .accessibilityIdentifier("security.nsec")
-                Button { revealed.toggle() } label: { Icon(revealed ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted) }
-                    .accessibilityLabel(t(revealed ? "auth.hideKey" : "auth.revealKey"))
-                    .accessibilityIdentifier("security.toggleNsec")
+                Button { revealed.toggle() } label: {
+                    Icon(revealed ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 36, height: 36).contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t(revealed ? "auth.hideKey" : "auth.revealKey"))
+                .accessibilityIdentifier("security.toggleNsec")
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(LW.card).clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+            .padding(.leading, 14).padding(.trailing, 4).padding(.vertical, 8)
+            .lwInset()
 
             Button {
                 // Local-only, auto-expiring clipboard item: the key must not sync via Universal Clipboard or linger.
@@ -128,9 +130,11 @@ struct SecretKeyReveal: View {
                 app.show(.success, t("auth.keyCopied"))
                 Task { try? await Task.sleep(for: .seconds(2)); copied = false }
             } label: { Label { Text(copied ? t("common.copied") : t("auth.copyKey")) } icon: { Icon(copied ? "check" : "copy", size: 16) } }
-                .buttonStyle(.lw(.secondary, height: 40))
+                .buttonStyle(.lw(.secondary, height: 46))
                 .accessibilityIdentifier("security.copyNsec")
         }
+        .padding(12)
+        .lwSurface(LW.Radius.surface - 4)
     }
 }
 
@@ -144,20 +148,21 @@ struct PasskeysSection: View {
     private let p = "settings.passkeysScreen"
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             VStack(spacing: 0) {
                 if credentials == nil {
-                    ProgressView().frame(maxWidth: .infinity, minHeight: 56)
+                    ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 58)
                 } else if let credentials, credentials.isEmpty {
-                    Text(t("\(p).empty")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                    Text(t("\(p).empty")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18).padding(.vertical, 18)
                 } else {
                     ForEach(Array((credentials ?? []).enumerated()), id: \.element.id) { i, c in
-                        if i > 0 { RowDivider() }
+                        if i > 0 { SettingsRowDivider() }
                         Button { selected = c } label: { row(c) }.buttonStyle(.plain)
                     }
                 }
             }
-            .background(LW.card).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .lwSurface(LW.Radius.surface - 4)
 
             if PasskeyService.isSupported {
                 Button { Task { await add() } } label: {
@@ -179,7 +184,6 @@ struct PasskeysSection: View {
                 Task { await load() }
             }
             .presentationDetents([.medium])
-            .presentationBackground(LW.background)
         }
     }
 
@@ -188,19 +192,19 @@ struct PasskeysSection: View {
     }
 
     private func row(_ c: PasskeyCredential) -> some View {
-        HStack(spacing: 12) {
-            Icon("fingerprint").foregroundStyle(LW.muted).frame(width: 36, height: 36).background(LW.background)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        HStack(spacing: 14) {
+            SettingsIconTile(icon: "fingerprint", color: LW.mint)
             VStack(alignment: .leading, spacing: 2) {
-                Text(name(c)).font(LW.font(16, .medium)).lineLimit(1)
+                Text(name(c)).font(LW.font(16, .medium)).foregroundStyle(LW.foreground).lineLimit(1)
                 Text(c.lastUsedAt != nil ? t("\(p).lastUsed", ["when": SettingsFormat.relative(c.lastUsedAt)])
                     : t("\(p).addedAgo", ["when": SettingsFormat.relative(c.createdAt)]))
-                    .font(LW.font(12)).foregroundStyle(LW.muted).lineLimit(1)
+                    .font(LW.font(13)).foregroundStyle(LW.muted).lineLimit(1)
             }
-            Spacer()
-            if c.deviceType == "multiDevice" && c.backedUp { SettingsBadge(t("\(p).synced")) }
+            Spacer(minLength: 8)
+            if c.deviceType == "multiDevice" && c.backedUp { SettingsBadge(t("\(p).synced"), .info) }
+            Icon("chevron-right", size: 15).foregroundStyle(LW.muted.opacity(0.8))
         }
-        .padding(.horizontal, 16).frame(minHeight: 56).contentShape(Rectangle())
+        .padding(.horizontal, 18).frame(minHeight: 58).contentShape(Rectangle())
     }
 
     private func load() async {
@@ -246,13 +250,13 @@ private struct PasskeySheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(t("\(p).manage")).font(LW.font(18, .semibold))
+                Text(t("\(p).manage")).font(LW.font(22, .bold)).foregroundStyle(LW.foreground)
                 Text(name).font(LW.font(14)).foregroundStyle(LW.muted)
             }
             VStack(alignment: .leading, spacing: 8) {
-                Text(t("\(p).name")).font(LW.font(14, .medium))
+                Text(t("\(p).name")).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).padding(.leading, 6)
                 LWTextField(placeholder: t("\(p).namePlaceholder"), text: $label)
                     .onChange(of: label) { _, v in if v.count > 64 { label = String(v.prefix(64)) } }
             }
@@ -265,7 +269,7 @@ private struct PasskeySheet: View {
                 .disabled(busy)
             Spacer()
         }
-        .padding(20)
+        .padding(.horizontal, 20).padding(.top, 28)
         .alert(t(isLast ? "\(p).deleteOnlyTitle" : "\(p).deleteTitle"), isPresented: $confirmDelete) {
             Button(t("common.cancel"), role: .cancel) {}
             Button(t("\(p).deleteConfirm"), role: .destructive) { Task { await delete() } }
@@ -305,30 +309,35 @@ struct ConnectedAppsSection: View {
     var body: some View {
         let mcpURL = app.api.http.url("/api/mcp")
         VStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Text(t("\(a).mcpUrl")).font(LW.font(14, .medium))
+                    Text(t("\(a).mcpUrl")).font(LW.font(15, .semibold)).foregroundStyle(LW.foreground)
                     Spacer()
                     Link(destination: URL(string: "https://docs.lawallet.io/docs/guides/mcp")!) {
-                        HStack(spacing: 4) { Text(t("\(a).setupGuide")).font(LW.font(12)); Icon("external-link", size: 12) }
+                        HStack(spacing: 4) { Text(t("\(a).setupGuide")).font(LW.font(13, .medium)); Icon("external-link", size: 12) }
                     }
-                    .foregroundStyle(LW.muted)
+                    .foregroundStyle(LW.mint)
                 }
                 HStack(spacing: 8) {
-                    Text(mcpURL).font(.system(size: 13, design: .monospaced)).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(mcpURL).font(.system(size: 13, design: .monospaced)).foregroundStyle(LW.foreground.opacity(0.9))
+                        .lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
                     Button {
                         UIPasteboard.general.string = mcpURL
                         copied = true
                         Haptics.tap()
                         Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
-                    } label: { Icon(copied ? "check" : "copy", size: 16).foregroundStyle(LW.muted).frame(width: 32, height: 32) }
-                        .accessibilityLabel(t("common.copy"))
+                    } label: {
+                        Icon(copied ? "check" : "copy", size: 15).foregroundStyle(copied ? LW.incoming : LW.muted)
+                            .frame(width: 36, height: 36).contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(t("common.copy"))
                 }
-                .padding(.leading, 12).padding(.vertical, 4).padding(.trailing, 4)
-                .background(LW.background).clipShape(RoundedRectangle(cornerRadius: 8))
-                Text(t("\(a).mcpHint")).font(LW.font(12)).foregroundStyle(LW.muted)
+                .padding(.leading, 14).padding(.trailing, 4).padding(.vertical, 4)
+                .lwInset()
+                Text(t("\(a).mcpHint")).font(LW.font(13)).foregroundStyle(LW.muted)
             }
-            .padding(16).background(LW.card).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(18).lwSurface(LW.Radius.surface - 4)
 
             VStack(spacing: 0) {
                 if let error {
@@ -337,19 +346,20 @@ struct ConnectedAppsSection: View {
                         Button { Task { await load() } } label: { Label { Text(t("common.retry")) } icon: { Icon("refresh-cw", size: 14) } }
                             .buttonStyle(.lw(.outline, height: 32, fullWidth: false))
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(18)
                 } else if let grants, grants.isEmpty {
-                    Text(t("\(a).empty")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                    Text(t("\(a).empty")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18).padding(.vertical, 18)
                 } else if let grants {
                     ForEach(Array(grants.enumerated()), id: \.element.id) { i, g in
-                        if i > 0 { RowDivider() }
+                        if i > 0 { SettingsRowDivider() }
                         row(g)
                     }
                 } else {
-                    ProgressView().frame(maxWidth: .infinity, minHeight: 56)
+                    ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 58)
                 }
             }
-            .background(LW.card).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .lwSurface(LW.Radius.surface - 4)
         }
         .task { await load() }
         .alert(t("\(a).revokeTitle"), isPresented: Binding(get: { target != nil }, set: { if !$0 { target = nil } })) {
@@ -359,11 +369,10 @@ struct ConnectedAppsSection: View {
     }
 
     private func row(_ g: OAuthGrant) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Icon("bot").foregroundStyle(LW.muted).frame(width: 36, height: 36).background(LW.background)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(g.clientName).font(LW.font(16, .medium))
+        HStack(alignment: .top, spacing: 14) {
+            SettingsIconTile(icon: "bot", color: LW.foreground)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(g.clientName).font(LW.font(16, .medium)).foregroundStyle(LW.foreground)
                 HStack(spacing: 4) {
                     ForEach(g.scopes, id: \.self) { scope in
                         if scope == "spend" {
@@ -375,14 +384,17 @@ struct ConnectedAppsSection: View {
                 }
                 Text(t("\(a).connected", ["when": SettingsFormat.relative(g.createdAt)]) + " · "
                     + (g.lastUsedAt != nil ? t("\(a).lastUsed", ["when": SettingsFormat.relative(g.lastUsedAt)]) : t("\(a).notUsed")))
-                    .font(LW.font(12)).foregroundStyle(LW.muted)
+                    .font(LW.font(13)).foregroundStyle(LW.muted)
             }
             Spacer(minLength: 0)
             Button(t("\(a).revoke")) { target = g }
-                .font(LW.font(13, .medium)).foregroundStyle(LW.destructiveText)
+                .font(LW.font(13, .semibold)).foregroundStyle(LW.destructiveText)
+                .padding(.horizontal, 12).frame(height: 32)
+                .background(LW.coral.opacity(0.14), in: Capsule())
+                .buttonStyle(.plain)
                 .disabled(revoking)
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, 18).padding(.vertical, 14)
     }
 
     private func load() async {

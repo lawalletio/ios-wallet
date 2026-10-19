@@ -25,15 +25,16 @@ struct ActivityScreen: View {
                     }
                     ForEach(groups, id: \.key) { day, txs in
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(dayLabel(day)).font(LW.font(12, .medium)).foregroundStyle(LW.muted).textCase(.uppercase).padding(.leading, 4)
+                            Text(dayLabel(day)).font(LW.font(15, .semibold)).foregroundStyle(LW.muted).padding(.leading, 6)
                             VStack(spacing: 0) {
                                 ForEach(Array(txs.enumerated()), id: \.element.id) { i, tx in
                                     Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }
                                         .accessibilityIdentifier("activity.row")
-                                    if i < txs.count - 1 { Rectangle().fill(LW.border.opacity(0.4)).frame(height: 1) }
+                                    if i < txs.count - 1 { RowDivider().padding(.leading, 56) }
                                 }
                             }
-                            .background(LW.card.opacity(0.4)).clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(.vertical, 4)
+                            .lwSurface()
                         }
                     }
                     if w.hasMore && !items.isEmpty {
@@ -41,8 +42,10 @@ struct ActivityScreen: View {
                             .onAppear { Task { await w.loadTransactions(reset: false) } }
                     }
                 }
-                .padding(.horizontal, 16).padding(.bottom, 32)
+                .padding(.horizontal, 20).padding(.bottom, 32).padding(.top, 8)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
             .refreshable { await w.loadTransactions(reset: true) }
         }
         .task { if w.transactions.isEmpty { await w.loadTransactions(reset: true) } }
@@ -78,8 +81,10 @@ struct ActivityDetailScreen: View {
                     ],
                     proofs: [(t("activity.detail.paymentHash"), tx.paymentHash), (t("activity.detail.preimage"), tx.preimage)]
                 )
-                .padding(16)
+                .padding(.horizontal, 20).padding(.vertical, 12)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
         }
     }
 }

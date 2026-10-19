@@ -10,37 +10,26 @@ struct NostrLoginScreen: View {
     var body: some View {
         OnbPage {
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: 28) {
                     OnbHeading(title: t("onboarding.nostr.title"), subtitle: t("onboarding.nostr.subtitle"))
-                    VStack(spacing: 0) {
-                        HStack(spacing: 0) {
-                            tabButton(t("auth.privateKeyTab"), .nsec, id: "nostr.tab.nsec")
-                            tabButton("Bunker", .bunker, id: "nostr.tab.bunker")
-                        }
-                        .overlay(alignment: .bottom) { Rectangle().fill(LW.border).frame(height: 1) }
+                    VStack(spacing: 20) {
+                        // ids resolve to `nostr.tab.nsec` / `nostr.tab.bunker`.
+                        GlassSegmented(items: [(Tab.nsec, t("auth.privateKeyTab")), (.bunker, "Bunker")], selection: $tab,
+                                       idPrefix: "nostr.tab", compact: false)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         switch tab {
-                        case .nsec: NsecLoginForm().padding(.top, 16)
-                        case .bunker: BunkerLoginForm().padding(.top, 16)
+                        case .nsec: NsecLoginForm()
+                        case .bunker: BunkerLoginForm()
                         }
                     }
                 }
-                .padding(.top, 8).padding(.bottom, 8)
+                .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
         }
-    }
-
-    private func tabButton(_ label: String, _ value: Tab, id: String) -> some View {
-        Button { tab = value } label: {
-            Text(label).font(LW.font(14)).foregroundStyle(tab == value ? LW.foreground : LW.muted)
-                .frame(maxWidth: .infinity).padding(.vertical, 16)
-                .overlay(alignment: .bottom) { if tab == value { Rectangle().fill(LW.foreground).frame(height: 1) } }
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(tab == value ? .isSelected : [])
-        .accessibilityIdentifier(id)
     }
 }
 
@@ -58,17 +47,17 @@ private struct NsecLoginForm: View {
     @State private var error: String?
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             VStack(spacing: 8) {
                 OnbRevealField(placeholder: t("auth.nsecPlaceholder"), text: $nsec, invalid: error != nil, id: "nostr.nsecField")
                     .onChange(of: nsec) { error = nil }
                     .onSubmit(submit)
-                OnbError(message: error)
+                OnbError(message: error).padding(.horizontal, 6)
             }
             Button(action: submit) {
                 OnbIconText(icon: nil, text: loading ? t("onboarding.nostr.loading") : t("onboarding.nostr.submit"), busy: loading)
             }
-            .buttonStyle(.lw(.secondary, height: 44))
+            .buttonStyle(.lw(.primary))
             .disabled(nsec.trimmingCharacters(in: .whitespaces).isEmpty || loading)
             .accessibilityIdentifier("nostr.nsecSubmit")
         }
@@ -104,33 +93,14 @@ private struct BunkerLoginForm: View {
     @State private var mode = Mode.qr
 
     var body: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 4) {
-                modeButton(t("auth.showQr"), "qr-code", .qr)
-                modeButton(t("auth.pasteUrl"), "link", .paste)
-            }
-            .padding(4)
-            .background(LW.secondary)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        VStack(spacing: 20) {
+            // ids resolve to `nostr.bunker.qr` / `nostr.bunker.paste`.
+            GlassSegmented(items: [(Mode.qr, t("auth.showQr")), (.paste, t("auth.pasteUrl"))], selection: $mode, idPrefix: "nostr.bunker")
             switch mode {
             case .qr: BunkerQRMode()
             case .paste: BunkerPasteMode()
             }
         }
-    }
-
-    private func modeButton(_ label: String, _ icon: String, _ value: Mode) -> some View {
-        Button { mode = value } label: {
-            HStack(spacing: 6) { Icon(icon, size: 14); Text(label) }
-                .font(LW.font(12, .medium))
-                .foregroundStyle(mode == value ? LW.foreground : LW.muted)
-                .frame(maxWidth: .infinity).padding(.vertical, 7)
-                .background(mode == value ? LW.background : .clear)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier(value == .qr ? "nostr.bunker.qr" : "nostr.bunker.paste")
     }
 }
 
@@ -153,13 +123,17 @@ private struct BunkerQRMode: View {
             case .generating: progress(t("auth.generatingConnection"))
             case .connecting: progress(t("auth.signerConnected"))
             case .error:
-                VStack(spacing: 12) {
+                VStack(spacing: 14) {
+                    Icon("wifi-off", size: 18).foregroundStyle(LW.coral)
+                        .frame(width: 36, height: 36).background(LW.coral.opacity(0.16), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     Text(error ?? t("auth.connectFailed")).font(LW.font(14)).foregroundStyle(LW.destructiveText).multilineTextAlignment(.center)
                     Button { attempt += 1 } label: { OnbIconText(icon: "refresh-cw", text: t("auth.tryAgain")) }
-                        .buttonStyle(.lw(.outline, height: 36, fullWidth: false))
+                        .buttonStyle(.lw(.outline, height: 40, fullWidth: false))
                         .accessibilityIdentifier("nostr.bunker.retry")
                 }
-                .padding(.vertical, 24)
+                .padding(.horizontal, 20).padding(.vertical, 26)
+                .frame(maxWidth: .infinity)
+                .lwSurface()
             case .waiting: waiting
             }
         }
@@ -168,34 +142,47 @@ private struct BunkerQRMode: View {
     }
 
     private var waiting: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             if let uri {
+                // White tile stays opaque for scanners, set in a glass bezel (same as `QRDisplay`).
                 QRCodeImage(text: uri)
-                    .frame(width: 200, height: 200).padding(12).background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .frame(width: 200, height: 200).padding(14)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .padding(10)
+                    .lwSurface(LW.Radius.sheet)
                     .accessibilityIdentifier("nostr.bunker.qrCode")
-                HStack(spacing: 8) {
-                    Button {
-                        UIPasteboard.general.string = uri
-                        copied = true
-                        Haptics.tap()
-                        Task { try? await Task.sleep(for: .seconds(2)); copied = false }
-                    } label: { OnbIconText(icon: "copy", text: copied ? t("auth.copiedBang") : t("auth.copyUri")) }
-                        .buttonStyle(.lw(.ghost, height: 36, fullWidth: false))
-                        .font(LW.font(12))
+                // Open-signer capsule + round copy lens, like `QRDisplay`'s copy/share pair.
+                GlassGroup(spacing: 10) {
+                    HStack(spacing: 10) {
+                        if let url = URL(string: uri) {
+                            Button { openURL(url) } label: { OnbIconText(icon: "external-link", text: t("ios.onb.openSigner")) }
+                                .buttonStyle(.lw(.secondary, height: 46))
+                                .accessibilityIdentifier("nostr.bunker.open")
+                        }
+                        Button {
+                            UIPasteboard.general.string = uri
+                            copied = true
+                            Haptics.tap()
+                            Task { try? await Task.sleep(for: .seconds(2)); copied = false }
+                        } label: {
+                            Icon(copied ? "check" : "copy", size: 17).foregroundStyle(LW.foreground).frame(width: 46, height: 46).contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .lwGlass(in: Circle(), interactive: true)
+                        .accessibilityLabel(copied ? t("auth.copiedBang") : t("auth.copyUri"))
                         .accessibilityIdentifier("nostr.bunker.copy")
-                    if let url = URL(string: uri) {
-                        Button { openURL(url) } label: { OnbIconText(icon: "external-link", text: t("ios.onb.openSigner")) }
-                            .buttonStyle(.lw(.ghost, height: 36, fullWidth: false))
-                            .accessibilityIdentifier("nostr.bunker.open")
                     }
                 }
+                .frame(maxWidth: 300)
                 HStack(spacing: 8) {
-                    ProgressView().controlSize(.mini).tint(LW.muted)
+                    ProgressView().controlSize(.mini).tint(LW.sun)
                     Text(t("auth.waitingForSigner"))
                 }
-                .font(LW.font(12)).foregroundStyle(LW.muted)
-                Text(scanHint).font(LW.font(12)).foregroundStyle(LW.muted).multilineTextAlignment(.center).tint(LW.muted)
+                .font(LW.font(13, .medium)).foregroundStyle(LW.muted)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(Color.white.opacity(0.08), in: Capsule())
+                Text(scanHint).font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center).tint(LW.muted)
+                    .padding(.horizontal, 12)
             }
         }
     }
@@ -212,7 +199,8 @@ private struct BunkerQRMode: View {
             ProgressView().tint(LW.muted)
             Text(label).font(LW.font(14)).foregroundStyle(LW.muted)
         }
-        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity).padding(.vertical, 40)
+        .lwSurface()
     }
 
     private func connect() async {
@@ -248,18 +236,18 @@ private struct BunkerPasteMode: View {
     @State private var error: String?
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             VStack(spacing: 8) {
                 OnbRevealField(placeholder: "bunker://...", text: $url, invalid: error != nil, id: "nostr.bunkerField")
                     .disabled(loading)
                     .onChange(of: url) { error = nil }
                     .onSubmit(submit)
-                OnbError(message: error)
+                OnbError(message: error).padding(.horizontal, 6)
             }
             Button(action: submit) {
                 OnbIconText(icon: nil, text: loading ? t("onboarding.nostr.loading") : t("onboarding.nostr.submit"), busy: loading)
             }
-            .buttonStyle(.lw(.secondary, height: 44))
+            .buttonStyle(.lw(.primary))
             .disabled(url.trimmingCharacters(in: .whitespaces).isEmpty || loading)
             .accessibilityIdentifier("nostr.bunkerSubmit")
         }

@@ -4,6 +4,7 @@ import SwiftUI
 /// `/wallet/settings/cards` — components/wallet/settings/cards-screen.tsx.
 struct CardsScreen: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.theme) private var theme
     @State private var cards: [Card]?
     @State private var failed = false
     @State private var pending: Set<String> = []
@@ -24,7 +25,7 @@ struct CardsScreen: View {
             if cards == nil && !failed {
                 skeleton
             } else if failed {
-                SettingsEmptyState(title: t("settings.cardsScreen.errorTitle"), message: t("settings.cardsScreen.tryAgain"), dashed: false) {
+                SettingsEmptyState(title: t("settings.cardsScreen.errorTitle"), message: t("settings.cardsScreen.tryAgain")) {
                     Button { Task { await load() } } label: { Label { Text(t("common.retry")) } icon: { Icon("refresh-cw", size: 16) } }
                         .buttonStyle(.lw(.outline, height: 40, fullWidth: false))
                 }
@@ -35,7 +36,7 @@ struct CardsScreen: View {
                         .accessibilityIdentifier("cards.activate")
                 }
             } else {
-                VStack(spacing: 12) {
+                VStack(spacing: 30) {
                     ForEach(sorted) { card in tile(card) }
                 }
                 .accessibilityElement(children: .contain)
@@ -59,7 +60,7 @@ struct CardsScreen: View {
         card.title?.nonBlank ?? card.design.description.nonBlank ?? fallback
     }
 
-    // MARK: card tile
+    // MARK: card tile — the design floats in a glass rim; status + switch sit on a glass row underneath
 
     private func tile(_ card: Card) -> some View {
         let name = Self.name(card, t("settings.cardsScreen.fallbackName"))
@@ -68,84 +69,71 @@ struct CardsScreen: View {
         let status = blocked ? "Blocked" : enabled ? "Active" : "Disabled"
         let linkNeeded = card.defaultRemoteWalletId != nil && !blocked && card.remoteWalletId != card.defaultRemoteWalletId
         let image = URL(string: card.design.imageUrl, relativeTo: app.endpoint)
+        let art = RoundedRectangle(cornerRadius: 18, style: .continuous)
 
-        return Color.clear
-            .aspectRatio(1.55, contentMode: .fit)
-            .frame(minHeight: 176)
-            .overlay {
-                ZStack {
-                    LW.secondary
-                    if image != nil { RemoteImage(url: image) } else { Icon("credit-card", size: 32).foregroundStyle(LW.muted) }
-                }
-                .grayscale(blocked || !enabled ? 1 : 0)
-                .opacity(blocked || !enabled ? 0.8 : 1)
-            }
-            .overlay {
-                LinearGradient(colors: [LW.background.opacity(0.05), LW.background.opacity(0.3), LW.background.opacity(0.85)],
-                               startPoint: .top, endPoint: .bottom)
-            }
-            .overlay {
-                VStack {
-                    HStack {
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 8) {
-                            SettingsBadge(t("settings.cardsScreen.status.\(status)"), status == "Active" ? .primary : .secondary)
-                                .accessibilityLabel(t("settings.cardsScreen.statusLabel", ["status": t("settings.cardsScreen.status.\(status)")]))
-                            if linkNeeded { linkButton(card, name) }
-                        }
+        return VStack(spacing: 12) {
+            Color.clear
+                .aspectRatio(1.586, contentMode: .fit)
+                .overlay {
+                    ZStack {
+                        Color.white.opacity(0.06)
+                        if image != nil { RemoteImage(url: image) } else { Icon("credit-card", size: 32).foregroundStyle(LW.muted) }
                     }
-                    Spacer()
-                    HStack(alignment: .bottom, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(name).font(LW.font(18, .semibold)).lineLimit(1)
-                            Text(card.design.description.nonBlank ?? Self.shortId(card.id)).font(LW.font(12)).foregroundStyle(LW.muted).lineLimit(1)
-                        }
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(.ultraThinMaterial.opacity(0.6)).background(LW.background.opacity(0.65))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        Spacer(minLength: 0)
-                        Toggle("", isOn: Binding(get: { enabled }, set: { next in Task { await toggle(card, name, next) } }))
-                            .labelsHidden()
-                            .disabled(pending.contains(card.id) || blocked)
-                            .accessibilityLabel(t(enabled ? "settings.cardsScreen.disable" : "settings.cardsScreen.enable", ["name": name]))
-                            .accessibilityIdentifier("cards.toggle.\(card.id)")
-                            .padding(.horizontal, 10).padding(.vertical, 8)
-                            .background(LW.background.opacity(0.7)).clipShape(Capsule())
-                    }
+                    .grayscale(blocked || !enabled ? 1 : 0)
+                    .opacity(blocked || !enabled ? 0.7 : 1)
                 }
-                .padding(16)
+                .clipShape(art)
+                .overlay(art.strokeBorder(LinearGradient(colors: [Color.white.opacity(0.35), Color.white.opacity(0.06)],
+                                                         startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.75))
+                .padding(6)
+                .lwSurface(24)
+                .overlay(alignment: .topTrailing) { if linkNeeded { linkButton(card, name).padding(16) } }
+                .shadow(color: .black.opacity(0.45), radius: 26, y: 16)
+                .padding(.horizontal, 4)
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(name).font(LW.font(16, .semibold)).foregroundStyle(LW.foreground).lineLimit(1)
+                    Text(card.design.description.nonBlank ?? Self.shortId(card.id)).font(LW.font(13)).foregroundStyle(LW.muted).lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                SettingsBadge(t("settings.cardsScreen.status.\(status)"), blocked ? .destructive : enabled ? .primary : .outline)
+                    .accessibilityLabel(t("settings.cardsScreen.statusLabel", ["status": t("settings.cardsScreen.status.\(status)")]))
+                Toggle("", isOn: Binding(get: { enabled }, set: { next in Task { await toggle(card, name, next) } }))
+                    .labelsHidden()
+                    .tint(theme.preset.primary)
+                    .disabled(pending.contains(card.id) || blocked)
+                    .accessibilityLabel(t(enabled ? "settings.cardsScreen.disable" : "settings.cardsScreen.enable", ["name": name]))
+                    .accessibilityIdentifier("cards.toggle.\(card.id)")
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(LW.border.opacity(0.4)))
-            .animation(.easeOut(duration: 0.2), value: enabled)
+            .padding(.leading, 18).padding(.trailing, 14).padding(.vertical, 12)
+            .lwSurface(LW.Radius.surface - 4)
+        }
+        .animation(.easeOut(duration: 0.2), value: enabled)
     }
 
     private func linkButton(_ card: Card, _ name: String) -> some View {
         Button { Task { await link(card, name) } } label: {
             HStack(spacing: 6) {
                 if linkPending.contains(card.id) { ProgressView().controlSize(.mini) } else { Icon("link-2", size: 14) }
-                Text(t("settings.cardsScreen.linkToWallet")).font(LW.font(12, .semibold))
+                Text(t("settings.cardsScreen.linkToWallet")).font(LW.font(13, .semibold))
             }
-            .padding(.horizontal, 12).frame(height: 36)
-            .background(LW.background.opacity(0.75)).clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(LW.border.opacity(0.4)))
+            .padding(.horizontal, 14).frame(height: 36).contentShape(Capsule())
         }
+        .buttonStyle(.plain)
         .foregroundStyle(LW.foreground)
+        .lwGlass(in: Capsule(), interactive: true)
         .disabled(linkPending.contains(card.id))
     }
 
     private var skeleton: some View {
-        VStack(spacing: 12) {
-            ForEach(0..<3, id: \.self) { _ in
-                HStack(spacing: 12) {
-                    RoundedRectangle(cornerRadius: 12).fill(LW.secondary).frame(width: 96, height: 62)
-                    VStack(alignment: .leading, spacing: 8) {
-                        RoundedRectangle(cornerRadius: 4).fill(LW.secondary).frame(width: 112, height: 18)
-                        RoundedRectangle(cornerRadius: 4).fill(LW.secondary).frame(width: 144, height: 14)
-                    }
-                    Spacer()
+        VStack(spacing: 30) {
+            ForEach(0..<2, id: \.self) { _ in
+                VStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.white.opacity(0.06)).aspectRatio(1.586, contentMode: .fit)
+                    RoundedRectangle(cornerRadius: LW.Radius.surface - 4, style: .continuous).fill(Color.white.opacity(0.06)).frame(height: 62)
                 }
-                .padding(12).background(LW.card).clipShape(RoundedRectangle(cornerRadius: 16)).shimmer()
+                .shimmer()
             }
         }
         .accessibilityLabel(t("settings.cardsScreen.loading"))

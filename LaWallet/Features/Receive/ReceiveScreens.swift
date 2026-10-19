@@ -20,7 +20,8 @@ struct ReceiveAddressScreen: View {
             ScreenHeader(title: t("receive.title"), close: true)
             if app.me == nil {
                 Spacer()
-                Text(t("common.loading")).font(LW.font(14)).foregroundStyle(LW.muted)
+                HStack(spacing: 10) { ProgressView().tint(LW.muted); Text(t("common.loading")) }
+                    .font(LW.font(14)).foregroundStyle(LW.muted)
                 Spacer()
             } else if let address = app.me?.lightningAddress {
                 VStack {
@@ -28,32 +29,36 @@ struct ReceiveAddressScreen: View {
                     QRDisplay(value: address, caption: address)
                         .overlay(alignment: .top) {
                             if let credit {
+                                // Covers QRDisplay's white code tile (232 + 2×16) inside its 10 pt glass bezel.
                                 Text("+\(credit.amountSats.formatted())")
-                                    .font(LW.font(32, .semibold)).monospacedDigit().foregroundStyle(LW.incoming)
-                                    .frame(width: 272, height: 272)
-                                    .background(Color.white.opacity(0.85))
-                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    .font(LW.font(44, .semibold)).tracking(-1.4).monospacedDigit().foregroundStyle(LW.incoming)
+                                    .frame(width: 264, height: 264)
+                                    .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                    .padding(.top, 10)
                                     .transition(.scale(scale: 0.6).combined(with: .opacity))
                                     .id(credit.id)
                                     .accessibilityIdentifier("receive.credit")
                             }
                         }
                     Spacer()
+                }
+                .padding(.horizontal, 20)
+                BottomBar {
                     Button { app.navigate(.receiveAmount) } label: {
                         Label { Text(t("receive.requestAmount")) } icon: { Icon("plus", size: 16) }
                     }
                     .buttonStyle(.lw(.secondary))
                     .accessibilityIdentifier("receive.requestAmount")
                 }
-                .padding(.horizontal, 16).padding(.bottom, 24)
             } else {
-                VStack(spacing: 16) {
-                    Text(t("receive.noAddress")).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                VStack(spacing: 18) {
+                    Icon("qr-code", size: 26).foregroundStyle(LW.muted).frame(width: 64, height: 64).lwGlass(in: Circle())
+                    Text(t("receive.noAddress")).font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
                     Button(t("receive.claimUsername")) { app.navigate(.claimUsername(fromActivation: false, bonus: false)) }
                         .buttonStyle(.lw(.secondary, fullWidth: false))
                         .accessibilityIdentifier("receive.claimUsername")
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
                 .frame(maxHeight: .infinity)
             }
         }
@@ -83,16 +88,19 @@ struct ReceiveAmountScreen: View {
             ScreenHeader(title: t("receive.title"))
             ScrollView {
                 PayAmountPad(value: $value, disabled: loading)
-                    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 12)
+                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 12)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
             BottomBar {
-                TextField(t("receive.notePlaceholder"), text: $note)
-                    .font(LW.font(15))
-                    .padding(.horizontal, 14).frame(height: 44)
-                    .background(LW.background)
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(LW.border))
+                TextField("", text: $note, prompt: Text(verbatim: t("receive.notePlaceholder")).foregroundStyle(LW.muted.opacity(0.8)))
+                    .font(LW.font(16))
+                    .foregroundStyle(LW.foreground)
+                    .padding(.horizontal, 16).frame(minHeight: 54)
+                    .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
+                    .accessibilityLabel(t("receive.notePlaceholder"))
                     .disabled(loading)
                     .accessibilityIdentifier("receive.amount.note")
                 Button { Task { await create(sats) } } label: {
@@ -153,29 +161,32 @@ struct ReceiveInvoiceScreen: View {
         VStack(spacing: 0) {
             ScreenHeader(title: t("receive.invoiceTitle"))
             ScrollView {
-                VStack(spacing: 24) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(inv.amountSats.formatted()).font(LW.font(36, .semibold)).monospacedDigit()
-                        Text("sats").font(LW.font(16)).foregroundStyle(LW.muted)
-                    }
-                    .accessibilityIdentifier("receive.invoice.amount")
-                    if !inv.description.isEmpty {
-                        Text(inv.description).font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                VStack(spacing: 22) {
+                    VStack(spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(inv.amountSats.formatted()).font(LW.font(56, .semibold)).tracking(-2).monospacedDigit()
+                                .lineLimit(1).minimumScaleFactor(0.4)
+                                .contentTransition(.numericText())
+                            Text("sats").font(LW.font(20, .medium)).foregroundStyle(LW.muted)
+                        }
+                        .accessibilityIdentifier("receive.invoice.amount")
+                        if !inv.description.isEmpty {
+                            Text(inv.description).font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                        }
                     }
                     if accepted {
                         BoltcardAccepted(amountSats: inv.amountSats)
                     } else {
                         invoiceQR(inv)
-                        expiry(inv)
+                        status(inv)
+                        nfcStatus(inv)
                     }
-                    if !accepted && nfc != .charging {
-                        Text(t("receive.waitingPayment")).font(LW.font(12)).foregroundStyle(LW.muted)
-                    }
-                    if !accepted { nfcStatus(inv) }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, 16).padding(.vertical, 24)
+                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 24)
             }
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
         }
         .onChange(of: app.wallet.lastPayment) { _, tx in
             if let tx, tx.type == .incoming, tx.paymentHash == inv.paymentHash { settle(tx) }
@@ -187,54 +198,76 @@ struct ReceiveInvoiceScreen: View {
 
     private func invoiceQR(_ inv: NWCMadeInvoice) -> some View {
         let preview = "\(inv.bolt11.prefix(12))…\(inv.bolt11.suffix(8))"
-        return VStack(spacing: 16) {
+        // Same white tile + glass bezel as `QRDisplay` (kept local for the invoice's own copy/a11y identifiers).
+        return VStack(spacing: 18) {
             // Upper-cased for a denser (bolt11-safe) QR, like `uppercasePayload`.
             QRCodeImage(text: inv.bolt11.uppercased())
-                .frame(width: 240, height: 240)
+                .frame(width: 232, height: 232)
                 .padding(16)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .accessibilityElement()
                 .accessibilityLabel(t("receive.invoiceTitle"))
                 .accessibilityIdentifier("receive.invoice.qr")
-            Text(preview).font(LW.font(14)).foregroundStyle(LW.muted)
-            HStack(spacing: 8) {
-                Button {
-                    UIPasteboard.general.string = inv.bolt11
-                    copied = true
-                    Haptics.tap()
-                    app.show(.success, t("common.copied"))
-                    Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
-                } label: {
-                    Label { Text(copied ? t("common.copied") : t("common.copy")) } icon: { Icon(copied ? "check" : "copy", size: 16) }
+                .padding(10)
+                .lwSurface(LW.Radius.sheet)
+            Text(preview).font(LW.font(15, .medium)).foregroundStyle(LW.foreground.opacity(0.85))
+            GlassGroup(spacing: 10) {
+                HStack(spacing: 10) {
+                    Button {
+                        UIPasteboard.general.string = inv.bolt11
+                        copied = true
+                        Haptics.tap()
+                        app.show(.success, t("common.copied"))
+                        Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
+                    } label: {
+                        Label { Text(copied ? t("common.copied") : t("common.copy")) } icon: { Icon(copied ? "check" : "copy", size: 16) }
+                    }
+                    .buttonStyle(.lw(.secondary, height: 46))
+                    .accessibilityIdentifier("receive.invoice.copy")
+                    ShareLink(item: inv.bolt11) {
+                        Icon("share-2", size: 17).foregroundStyle(LW.foreground).frame(width: 46, height: 46).contentShape(Circle())
+                    }
+                    .lwGlass(in: Circle(), interactive: true)
+                    .accessibilityLabel(t("common.share"))
                 }
-                .buttonStyle(.lw(.secondary))
-                .accessibilityIdentifier("receive.invoice.copy")
-                ShareLink(item: inv.bolt11) {
-                    Label { Text(t("common.share")) } icon: { Icon("share-2", size: 16) }
-                }
-                .buttonStyle(.lw(.secondary))
             }
             .frame(width: 272)
         }
     }
 
-    @ViewBuilder private func expiry(_ inv: NWCMadeInvoice) -> some View {
+    /// "Waiting for payment · expires in m:ss" as one small glass capsule; the expired state swaps in a retry.
+    @ViewBuilder private func status(_ inv: NWCMadeInvoice) -> some View {
+        let waiting = nfc != .charging
         if let expiresAt = inv.expiresAt ?? Bolt11.decode(inv.bolt11)?.expiresAt {
             TimelineView(.periodic(from: .now, by: 1)) { ctx in
                 let left = Int(expiresAt.timeIntervalSince(ctx.date))
                 if left > 0 {
-                    Text(t("ios.pay.expiresIn", ["time": Self.clock(left)])).font(LW.font(12)).monospacedDigit().foregroundStyle(LW.muted)
+                    statusPill(waiting: waiting, expiry: t("ios.pay.expiresIn", ["time": Self.clock(left)]))
                 } else {
-                    VStack(spacing: 8) {
-                        Text(t("ios.pay.expired")).font(LW.font(13)).foregroundStyle(LW.destructiveText)
+                    VStack(spacing: 10) {
+                        Text(t("ios.pay.expired")).font(LW.font(14, .medium)).foregroundStyle(LW.destructiveText)
                         Button(t("ios.pay.newInvoice")) { app.path.removeLast() }
-                            .buttonStyle(.lw(.outline, height: 36, fullWidth: false))
+                            .buttonStyle(.lw(.secondary, height: 44, fullWidth: false))
                     }
                 }
             }
             .accessibilityIdentifier("receive.invoice.expiry")
+        } else if waiting {
+            statusPill(waiting: true, expiry: nil)
         }
+    }
+
+    private func statusPill(waiting: Bool, expiry: String?) -> some View {
+        HStack(spacing: 8) {
+            PulseDot()
+            if waiting { Text(t("receive.waitingPayment")).foregroundStyle(LW.foreground.opacity(0.9)) }
+            if waiting && expiry != nil { Text(verbatim: "·") }
+            if let expiry { Text(expiry).monospacedDigit() }
+        }
+        .font(LW.font(13, .medium)).foregroundStyle(LW.muted)
+        .padding(.horizontal, 14).padding(.vertical, 9)
+        .lwGlass(in: Capsule())
+        .accessibilityElement(children: .combine)
     }
 
     static func clock(_ seconds: Int) -> String {
@@ -251,27 +284,29 @@ struct ReceiveInvoiceScreen: View {
                 Button { Task { await tapCard(inv) } } label: {
                     Label { Text(t("ios.nfc.tapCard")) } icon: { Icon("nfc", size: 16) }
                 }
-                .buttonStyle(.lw(.outline, height: 40, fullWidth: false))
+                .buttonStyle(.lw(.outline, height: 44, fullWidth: false))
                 .accessibilityIdentifier("receive.nfc")
             } else {
                 HStack(spacing: 6) { Icon("nfc", size: 14); Text(t("receive.nfc.unsupported")) }
-                    .font(LW.font(12)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                    .font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
             }
         case .scanning:
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 NFCPulse()
-                Text(t("receive.nfc.scanning")).font(LW.font(12)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                Text(t("receive.nfc.scanning")).font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
             }
         case .charging:
             HStack(spacing: 8) { ProgressView().controlSize(.small).tint(LW.muted); Text(t("receive.nfc.charging")) }
-                .font(LW.font(14))
+                .font(LW.font(14, .medium))
+                .padding(.horizontal, 16).padding(.vertical, 10)
+                .lwGlass(in: Capsule())
         case .failed(let message):
             VStack(spacing: 12) {
                 HStack(alignment: .top, spacing: 6) { Icon("alert-triangle", size: 14); Text(message) }
-                    .font(LW.font(12)).foregroundStyle(LW.destructiveText).multilineTextAlignment(.center)
+                    .font(LW.font(13)).foregroundStyle(LW.destructiveText).multilineTextAlignment(.center)
                     .accessibilityIdentifier("receive.nfc.error")
                 Button(t("receive.nfc.tryAgain")) { Task { await tapCard(inv) } }
-                    .buttonStyle(.lw(.outline, height: 36, fullWidth: false))
+                    .buttonStyle(.lw(.outline, height: 44, fullWidth: false))
             }
         case .accepted:
             EmptyView()
@@ -373,16 +408,16 @@ private struct BoltcardAccepted: View {
         VStack(spacing: 4) {
             ZStack {
                 Circle().strokeBorder(theme.preset.primary, lineWidth: 2).scaleEffect(popped ? 1.6 : 1).opacity(popped ? 0 : 0.8)
-                Circle().fill(theme.preset.gradient).overlay(Circle().strokeBorder(theme.preset.t300)).padding(8)
-                    .shadow(color: theme.preset.primary.opacity(0.55), radius: 18)
-                Icon("check", size: 40).foregroundStyle(LW.foreground).scaleEffect(popped ? 1 : 0.3).opacity(popped ? 1 : 0)
+                Circle().fill(Color.clear).lwGlass(in: Circle(), tint: .color(theme.preset.primary.opacity(0.75))).padding(8)
+                    .shadow(color: theme.preset.primary.opacity(0.45), radius: 24, y: 8)
+                Icon("check", size: 40).foregroundStyle(.white).scaleEffect(popped ? 1 : 0.3).opacity(popped ? 1 : 0)
             }
             .frame(width: 96, height: 96)
             .scaleEffect(popped ? 1 : 0.6)
             .padding(.bottom, 12)
-            Text(t("receive.nfc.cardAccepted")).font(LW.font(16, .medium))
-            Text(t("common.sats", ["n": amountSats.formatted()])).font(LW.font(14)).monospacedDigit().foregroundStyle(LW.muted)
-            Text(t(slow ? "receive.nfc.slowConfirm" : "receive.nfc.confirming")).font(LW.font(12)).foregroundStyle(LW.muted)
+            Text(t("receive.nfc.cardAccepted")).font(LW.font(20, .semibold))
+            Text(t("common.sats", ["n": amountSats.formatted()])).font(LW.font(15)).monospacedDigit().foregroundStyle(LW.muted)
+            Text(t(slow ? "receive.nfc.slowConfirm" : "receive.nfc.confirming")).font(LW.font(13)).foregroundStyle(LW.muted)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -447,8 +482,10 @@ struct ReceiveSummaryScreen: View {
                             proofs: [(t("receive.summary.paymentHash"), inv.paymentHash)] + (preimage.map { [(t("receive.summary.preimage"), $0)] } ?? [])
                         )
                     }
-                    .padding(.horizontal, 16).padding(.top, 32).padding(.bottom, 16)
+                    .padding(.horizontal, 20).padding(.top, 32).padding(.bottom, 16)
                 }
+                .scrollIndicators(.hidden)
+                .lwSoftScrollEdges()
                 PayReceiptActions(shareText: PayReceiptText.build(amount: "\(app.currencies.format(inv.amountSats, code)) \(app.currencies.unit(code))",
                                                             comment: note.isEmpty ? nil : note, date: settledAt,
                                                             paymentHash: inv.paymentHash, preimage: preimage)) {

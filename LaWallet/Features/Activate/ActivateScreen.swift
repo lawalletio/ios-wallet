@@ -35,13 +35,12 @@ struct ActivateScreen: View {
     private var imageURL: URL? { app.onbImageURL(design?.imageUrl) }
 
     var body: some View {
-        ZStack {
-            AmbientBackdrop(color: theme.preset.primary)
-            VStack(spacing: 0) {
-                if claimState != .success { ScreenHeader(title: nil, close: true) }
-                content.padding(.horizontal, 20).frame(maxWidth: 480, maxHeight: .infinity)
-            }
+        // The route's ambient light (brand glow included) sits behind; the card floats over it.
+        VStack(spacing: 0) {
+            if claimState != .success { ScreenHeader(title: nil, close: true) }
+            content.padding(.horizontal, 20).frame(maxWidth: 480, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await loadPreview() }
         .onChange(of: phase, initial: true) { _, p in sync(p) }
     }
@@ -50,9 +49,7 @@ struct ActivateScreen: View {
         switch phase {
         case .loading:
             VStack(spacing: 24) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(LW.card)
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(LW.border))
-                    .frame(width: 300, height: 189).shimmer()
+                Color.clear.frame(width: 300, height: 189).lwSurface(16).shimmer()
                 ProgressView().tint(LW.muted)
             }
             .frame(maxHeight: .infinity)
@@ -60,7 +57,7 @@ struct ActivateScreen: View {
             ActivationStatusView(icon: "alert-circle", tint: LW.destructiveText, heading: t("activate.error.title"),
                                  message: t(previewError == .invalidLink ? "activate.error.invalidLink" : "activate.error.loadFailed")) {
                 Button(t("activate.error.tryAgain")) { Task { await loadPreview() } }
-                    .buttonStyle(.lw(.secondary, height: 40, fullWidth: false))
+                    .buttonStyle(.lw(.secondary, height: 46, fullWidth: false))
             }
         case .unavailable:
             unavailable
@@ -83,9 +80,12 @@ struct ActivateScreen: View {
         GeometryReader { geo in
             ScrollView {
                 VStack(spacing: 0) {
-                    VStack(spacing: 4) {
-                        Text(t("activate.eyebrow").uppercased()).font(LW.font(12, .medium)).tracking(2.4).foregroundStyle(LW.muted)
-                        if let title { Text(title).font(LW.font(20, .semibold)).foregroundStyle(LW.foreground).multilineTextAlignment(.center) }
+                    VStack(spacing: 6) {
+                        Text(t("activate.eyebrow")).font(LW.font(15, .semibold)).foregroundStyle(LW.muted)
+                        if let title {
+                            Text(title).font(LW.font(28, .bold)).tracking(-0.6).foregroundStyle(LW.foreground).multilineTextAlignment(.center)
+                                .accessibilityAddTraits(.isHeader)
+                        }
                     }
                     .padding(.top, 8).padding(.bottom, 8)
                     ActivationCard(imageURL: imageURL, title: title)
@@ -96,29 +96,42 @@ struct ActivateScreen: View {
                 .frame(minHeight: geo.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
         }
     }
 
     @ViewBuilder private var actionBar: some View {
         if claimState == .claiming {
-            VStack(spacing: 8) {
-                ProgressView().tint(LW.muted)
-                Text(t("activate.activating")).font(LW.font(14)).foregroundStyle(LW.muted)
+            HStack(spacing: 10) {
+                ProgressView().tint(theme.preset.primary)
+                Text(t("activate.activating")).font(LW.font(15, .medium)).foregroundStyle(LW.foreground.opacity(0.85))
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 16)
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .lwGlass(in: Capsule())
         } else if app.isAuthenticated {
             VStack(spacing: 12) {
-                Button(action: runClaim) {
-                    HStack(spacing: 8) { Icon("zap", size: 20); Text(t("activate.activate")).font(LW.font(16, .semibold)) }
-                }
-                .buttonStyle(.lw(.theme, height: 56))
-                .accessibilityIdentifier("activate.claim")
                 if claimState == .error {
                     let message = claimError ?? t("activate.failed")
-                    VStack(spacing: 8) {
-                        Text(message).font(LW.font(14)).foregroundStyle(LW.destructiveText).multilineTextAlignment(.center)
+                    HStack(alignment: .top, spacing: 12) {
+                        Icon("alert-circle", size: 17).foregroundStyle(LW.coral)
+                            .frame(width: 34, height: 34).background(LW.coral.opacity(0.16), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        Text(message).font(LW.font(14, .medium)).foregroundStyle(LW.destructiveText).multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true).padding(.top, 7)
                             .accessibilityIdentifier("activate.error")
-                        if message.range(of: "claim", options: .caseInsensitive) != nil {
+                        Spacer(minLength: 0)
+                    }
+                    .padding(14)
+                    .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.surface - 4, style: .continuous), tint: .color(LW.coral.opacity(0.10)))
+                }
+                GlassGroup(spacing: 12) {
+                    VStack(spacing: 12) {
+                        Button(action: runClaim) {
+                            HStack(spacing: 8) { Icon("zap", size: 20); Text(t("activate.activate")).font(LW.font(16, .semibold)) }
+                        }
+                        .buttonStyle(.lw(.theme, height: 56))
+                        .accessibilityIdentifier("activate.claim")
+                        if claimState == .error, (claimError ?? t("activate.failed")).range(of: "claim", options: .caseInsensitive) != nil {
                             Button(t("activate.openWallet"), action: openWallet).buttonStyle(.lw(.secondary))
                         }
                     }
@@ -138,7 +151,7 @@ struct ActivateScreen: View {
         }
         return ActivationStatusView(icon: icon, tint: tint, heading: t("activate.\(key).title"), message: t("activate.\(key).body")) {
             if status == "CLAIMED" {
-                Button(t("activate.openWallet"), action: openWallet).buttonStyle(.lw(.secondary, height: 40, fullWidth: false))
+                Button(t("activate.openWallet"), action: openWallet).buttonStyle(.lw(.secondary, height: 46, fullWidth: false))
             }
         }
     }
@@ -178,6 +191,11 @@ struct ActivateScreen: View {
                 let result = try await app.api.claimActivation(tokenId)
                 app.pendingActivation = nil
                 claim = result
+                // Home's `ActivationBonusNote` explains the bump in balance for the next 24 h.
+                if result.bonuses.sats.granted, let sats = result.bonuses.sats.amountSats, sats > 0 {
+                    UserDefaults.standard.set(Date(), forKey: "lawallet-activation-bonus-at")
+                    UserDefaults.standard.set(sats, forKey: "lawallet-activation-bonus-sats")
+                }
                 withAnimation(.easeOut(duration: 0.3)) { claimState = .success }
                 Haptics.success()
                 Task {
@@ -224,30 +242,40 @@ private struct InlineActivationAuth: View {
     }
 
     private var choose: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             Text(t(PasskeyService.isSupported ? "activate.inlineAuth.intro" : "activate.inlineAuth.introNoPasskey"))
-                .font(LW.font(14)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
-            OnbPasskeyButton(mode: .register, label: t("activate.inlineAuth.passkey"), surfaceCancel: true,
-                             duplicateMessage: t("activate.inlineAuth.duplicate"), id: "activate.passkey",
-                             onStart: arm, onFailure: disarm)
-            Button { creating = true } label: { OnbIconText(icon: "key-round", text: t("activate.inlineAuth.nostr")) }
-                .buttonStyle(.lw(.secondary))
-                .accessibilityIdentifier("activate.nostr")
+                .font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 8)
+            GlassGroup(spacing: 12) {
+                VStack(spacing: 12) {
+                    OnbPasskeyButton(mode: .register, label: t("activate.inlineAuth.passkey"), surfaceCancel: true,
+                                     duplicateMessage: t("activate.inlineAuth.duplicate"), id: "activate.passkey",
+                                     onStart: arm, onFailure: disarm)
+                    Button { creating = true } label: { OnbIconText(icon: "key-round", text: t("activate.inlineAuth.nostr")) }
+                        .buttonStyle(.lw(.secondary))
+                        .accessibilityIdentifier("activate.nostr")
+                }
+            }
             Button(t("activate.inlineAuth.haveAccount")) { authPath.wrappedValue.append(AuthRoute.login) }
-                .buttonStyle(.lw(.ghost, height: 40))
+                .buttonStyle(.lw(.ghost, height: 44))
                 .accessibilityIdentifier("activate.haveAccount")
         }
     }
 
     private var createKey: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             Button { creating = false } label: {
-                HStack(spacing: 4) { Icon("arrow-left", size: 14); Text(t("common.back")) }.font(LW.font(12)).foregroundStyle(LW.muted)
+                HStack(spacing: 4) { Icon("chevron-left", size: 16); Text(t("common.back")).font(LW.font(14, .medium)) }
+                    .foregroundStyle(LW.foreground)
+                    .padding(.leading, 8).padding(.trailing, 12).frame(height: 36).contentShape(Capsule())
             }
+            .buttonStyle(.plain)
+            .lwGlass(in: Capsule(), interactive: true)
             .disabled(loading)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(t("activate.inlineAuth.newKeyTitle")).font(LW.font(16, .semibold)).foregroundStyle(LW.foreground)
-                Text(t("activate.inlineAuth.newKeyBody")).font(LW.font(12)).foregroundStyle(LW.muted)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(t("activate.inlineAuth.newKeyTitle")).font(LW.font(22, .bold)).tracking(-0.4).foregroundStyle(LW.foreground)
+                Text(t("activate.inlineAuth.newKeyBody")).font(LW.font(14)).foregroundStyle(LW.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             OnbSecretKeyReveal(nsec: keys.nsec, disabled: loading, confirmed: $confirmed,
                                confirmLabel: t("activate.inlineAuth.confirmLabel"), idPrefix: "activate")
@@ -294,31 +322,21 @@ private struct ActivationStatusView<Action: View>: View {
     @ViewBuilder var action: () -> Action
 
     var body: some View {
-        VStack(spacing: 12) {
-            Icon(icon, size: 28).foregroundStyle(tint).frame(width: 56, height: 56).background(LW.card).clipShape(Circle())
-            Text(heading).font(LW.font(20, .semibold)).foregroundStyle(LW.foreground)
-            Text(message).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: 320)
-            action().padding(.top, 8)
+        VStack(spacing: 20) {
+            VStack(spacing: 14) {
+                Icon(icon, size: 28).foregroundStyle(tint)
+                    .frame(width: 64, height: 64).background(tint.opacity(0.16), in: Circle())
+                    .padding(.bottom, 4)
+                Text(heading).font(LW.font(24, .bold)).tracking(-0.4).foregroundStyle(LW.foreground)
+                Text(message).font(LW.font(15)).foregroundStyle(LW.muted).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 24).padding(.vertical, 30)
+            .frame(maxWidth: 360)
+            .lwSurface(LW.Radius.sheet)
+            action()
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("activate.status")
-    }
-}
-
-/// Two soft themed blobs behind the activate flow (follows the community's brand color).
-private struct AmbientBackdrop: View {
-    let color: Color
-    var body: some View {
-        ZStack {
-            Circle().fill(RadialGradient(colors: [color.opacity(0.18), .clear], center: .center, startRadius: 0, endRadius: 144))
-                .frame(width: 288, height: 288).blur(radius: 40)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).offset(x: -96, y: -96)
-            Circle().fill(RadialGradient(colors: [color.opacity(0.12), .clear], center: .center, startRadius: 0, endRadius: 144))
-                .frame(width: 288, height: 288).blur(radius: 40)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).offset(x: 64, y: 96)
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
     }
 }

@@ -9,21 +9,31 @@ extension Color {
     }
 }
 
-/// Tokens from apps/web/app/globals.css (dark-only).
+/// Dark-only tokens. Base ink from apps/web/app/globals.css; the three light colors are the LaWallet isotype's lobes.
+/// Fills are translucent so every surface reads as glass over the ambient light (see Glass.swift).
 enum LW {
-    static let background = Color(hex: "0a0a0a")
+    /// Opaque screen base under the ambient light.
+    static let ink = Color(hex: "0a0a0a")
+    // Isotype light.
+    static let mint = Color(hex: "55b68c")
+    static let sun = Color(hex: "fdc800")
+    static let coral = Color(hex: "e95052")
+
+    /// Recessed well (inputs, selected-off states). Not a screen background — use `lwScreenBackground()`.
+    static let background = Color.black.opacity(0.30)
     static let foreground = Color(hex: "f5f5f5")
-    static let card = Color(hex: "171717")
-    static let secondary = Color(hex: "262626")
-    static let border = Color(hex: "262626")
-    static let muted = Color(hex: "a3a3a3")
-    static let ring = Color(hex: "737373")
-    static let destructive = Color(hex: "991b1b")
-    static let destructiveText = Color(hex: "f87171")
+    /// Light frosted fill for secondary pieces that are not full glass (chips, avatars, icon tiles).
+    static let card = Color.white.opacity(0.07)
+    static let secondary = Color.white.opacity(0.12)
+    static let border = Color.white.opacity(0.10)
+    static let muted = Color.white.opacity(0.62)
+    static let ring = Color.white.opacity(0.40)
+    static let destructive = Color(hex: "e95052")
+    static let destructiveText = Color(hex: "ff8a8c")
     static let incoming = Color(hex: "22c55e")
-    static let outgoing = Color(hex: "f97316")
+    static let outgoing = coral
     static let nwcPurple = Color(hex: "9b87ff")
-    static let gold = Color(hex: "F5A623")
+    static let gold = sun
 
     static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         .custom("Inter", size: size).weight(weight)

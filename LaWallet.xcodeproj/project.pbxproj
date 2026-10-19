@@ -46,6 +46,7 @@
 		D4C6DA5802821CE0271BBD6D /* treasure-chest.lottie in Resources */ = {isa = PBXBuildFile; fileRef = 7BEB516EC2D5B6B041D2DB63 /* treasure-chest.lottie */; };
 		D535A5BA8B3FA4976265A984 /* LaWalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F664E78FCC8DEDCA5F68AE11 /* LaWalletApp.swift */; };
 		D8927E442D913BDCAC34CD43 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACA762743FC8852FA3F7B8F5 /* WalletStore.swift */; };
+		DC64F9CAEA918241AC1F513D /* Glass.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBBAEDD62E72A4FFFC1D6606 /* Glass.swift */; };
 		DD72D018587302C5893A9830 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE831AEDF258A216918668A /* Theme.swift */; };
 		E229CF82E422BFB00511A07B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8DF72DFF4678C899B3A5FA91 /* Assets.xcassets */; };
 		E255AE68A69BD653FC9CBBB5 /* ios.json in Resources */ = {isa = PBXBuildFile; fileRef = 40BF806F6E215DC5D52DC19A /* ios.json */; };
@@ -128,6 +129,7 @@
 		C38A7109D3FA3810CA10B7BB /* ActivationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivationCard.swift; sourceTree = "<group>"; };
 		CCE831AEDF258A216918668A /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		D922682BAF477334DF32BDAB /* RemoteWalletDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteWalletDetailScreen.swift; sourceTree = "<group>"; };
+		DBBAEDD62E72A4FFFC1D6606 /* Glass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Glass.swift; sourceTree = "<group>"; };
 		DCBEE6A55A09758948A55997 /* SendScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendScreens.swift; sourceTree = "<group>"; };
 		DE3BFE482968B08A4C178ED0 /* LaWalletKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LaWalletKit; path = Packages/LaWalletKit; sourceTree = SOURCE_ROOT; };
 		E16CE97222621E0EA2872F06 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = "en.lproj/ios-settings.json"; sourceTree = "<group>"; };
@@ -273,6 +275,7 @@
 			isa = PBXGroup;
 			children = (
 				0D49E89FB1482FC50CEAF94B /* Components.swift */,
+				DBBAEDD62E72A4FFFC1D6606 /* Glass.swift */,
 				F11C45E9F0F91A657CC777CF /* PaymentReceipt.swift */,
 				CCE831AEDF258A216918668A /* Theme.swift */,
 			);
@@ -536,6 +539,7 @@
 				619123C2AC10E41E78CE6E6F /* ClaimCelebration.swift in Sources */,
 				4B79C31AFDEE7BA339A7D99E /* ClaimUsernameScreen.swift in Sources */,
 				D34380CE6F7C11B0468A9884 /* Components.swift in Sources */,
+				DC64F9CAEA918241AC1F513D /* Glass.swift in Sources */,
 				289B6187CEEFCA451DFB0877 /* HomeScreen.swift in Sources */,
 				F086FC3B91DFF2C1F5275C28 /* Keychain.swift in Sources */,
 				80E9B5AE9B64F3AA8C5D275C /* L10n.swift in Sources */,
