@@ -23,6 +23,13 @@ enum AuthRoute: Hashable {
 }
 
 extension Route {
+    var inSettings: Bool {
+        switch self {
+        case .settings, .cards, .security, .currencies, .language, .paymentSound, .instance, .remoteWallets, .remoteWalletDetail: true
+        default: false
+        }
+    }
+
     @MainActor @ViewBuilder var view: some View {
         switch self {
         case .activity: ActivityScreen()

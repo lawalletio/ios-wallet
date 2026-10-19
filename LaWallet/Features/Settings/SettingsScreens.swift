@@ -8,7 +8,7 @@ struct SettingsScreen: View {
     @State private var confirmRemove = false
 
     var body: some View {
-        SettingsPage(title: t("settings.title"), isRoot: true, onBack: { app.popToRoot() }) {
+        SettingsPage(title: t("settings.title"), onBack: { app.popToRoot() }) {
             GroupBox(label: t("settings.account")) {
                 row(t("settings.myCards"), "credit-card", LW.mint, "settings.cards") { app.navigate(.cards) }
                 SettingsRowDivider()
@@ -70,23 +70,19 @@ struct SettingsScreen: View {
 
 // MARK: shared settings chrome
 
-/// Settings sub-page layout: pill header, scrolling column, wallet tab bar (every web settings page has `<NavTabbar />`).
-/// No background of its own — the route puts `AmbientBackground` behind every screen.
+/// Settings sub-page layout: pill header, scrolling column. The wallet tab bar is the root's fixed `NavTabbar`;
+/// `tabbar` only reserves room for it. No background of its own — the route puts `AmbientBackground` behind every screen.
 struct SettingsPage<Content: View>: View {
     let title: String
-    var isRoot = false
     var tabbar = true
     var onBack: (() -> Void)?
     var refresh: (() async -> Void)?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                PillHeader(title: title, onBack: onBack)
-                scroll
-            }
-            if tabbar { SettingsTabbar(isRoot: isRoot) }
+        VStack(spacing: 0) {
+            PillHeader(title: title, onBack: onBack)
+            scroll
         }
     }
 
@@ -98,18 +94,6 @@ struct SettingsPage<Content: View>: View {
         .scrollIndicators(.hidden)
         .lwSoftScrollEdges()
         if let refresh { s.refreshable { await refresh() } } else { s }
-    }
-}
-
-struct SettingsTabbar: View {
-    var isRoot = false
-    @Environment(AppModel.self) private var app
-    var body: some View {
-        NavTabbar(active: .settings, onHome: { app.popToRoot() }, onScan: { app.navigate(.scan) }, onSettings: {
-            guard !isRoot else { return }
-            app.popToRoot()
-            app.navigate(.settings)
-        })
     }
 }
 

@@ -86,14 +86,31 @@ struct RootView: View {
 
 struct AuthenticatedRoot: View {
     @Environment(AppModel.self) private var app
+
+    /// Home and the settings pages carry the tab bar (web: `<NavTabbar />`); flow screens don't.
+    private var tab: NavTabbar.Tab? {
+        guard let top = app.path.last else { return .home }
+        return top.inSettings ? .settings : nil
+    }
+
     var body: some View {
         @Bindable var app = app
-        NavigationStack(path: $app.path) {
-            HomeScreen()
-                .navigationDestination(for: Route.self) { route in
-                    route.view.toolbar(.hidden, for: .navigationBar).lwScreenBackground(route.ambientIntensity)
-                }
+        ZStack(alignment: .bottom) {
+            NavigationStack(path: $app.path) {
+                HomeScreen()
+                    .navigationDestination(for: Route.self) { route in
+                        route.view.toolbar(.hidden, for: .navigationBar).lwScreenBackground(route.ambientIntensity)
+                    }
+            }
+            // One tab bar above the stack, so pushes slide under it instead of each screen bringing its own.
+            if let tab {
+                NavTabbar(active: tab, onHome: { app.popToRoot() }, onScan: { app.navigate(.scan) },
+                          onSettings: { app.path = [.settings] })
+                    .ignoresSafeArea(.keyboard)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.86), value: tab)
         .task(id: app.isAuthenticated) {
             // Resume a card activation that started while signed out (1 h TTL).
             if let pending = app.pendingActivation, Date().timeIntervalSince(pending.at) < 3600 {

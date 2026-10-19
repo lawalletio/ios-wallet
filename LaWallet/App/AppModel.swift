@@ -42,7 +42,7 @@ final class AppModel {
     let wallet = WalletStore()
     let currencies = CurrencyStore()
     let flows = FlowState()
-    var path = NavigationPath()
+    var path: [Route] = []
     var toast: Toast?
     var showWelcome = false
     /// Card activation started while signed out (1 h TTL, like `lawallet:pending-activation`).
@@ -182,7 +182,7 @@ final class AppModel {
         wallet.disconnect()
         wallet.clearCaches()
         flows.reset()
-        path = NavigationPath()
+        path = []
         ContactsStore.shared.clear()
     }
 
@@ -264,5 +264,5 @@ final class AppModel {
     }
 
     func navigate(_ route: Route) { path.append(route) }
-    func popToRoot() { path = NavigationPath() }
+    func popToRoot() { path = [] }
 }

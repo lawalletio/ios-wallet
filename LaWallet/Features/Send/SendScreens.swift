@@ -686,7 +686,7 @@ struct SendPreviewScreen: View {
                                                     paymentHash: decoded?.paymentHash, recipient: info?.name ?? flows.sendInput,
                                                     comment: q.comment, date: now)
             paying = false
-            app.path = NavigationPath([Route.sendSummary])
+            app.path = [.sendSummary]
         } catch {
             fail(PayErrors.text(error, fallback: t("send.preview.paymentFailed")))
         }

@@ -12,25 +12,23 @@ struct HomeScreen: View {
     @State private var flareAt: Date?
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView {
-                VStack(spacing: 0) {
-                    header
-                    balance
-                    actions
-                    addressCard
-                    activity
-                }
-                .padding(.bottom, 150)
+        // Bottom padding clears the root's fixed `NavTabbar`.
+        ScrollView {
+            VStack(spacing: 0) {
+                header
+                balance
+                actions
+                addressCard
+                activity
             }
-            .scrollIndicators(.hidden)
-            .lwSoftScrollEdges()
-            .refreshable {
-                await app.refreshMe()
-                await app.wallet.refreshBalance()
-                await app.wallet.loadTransactions(reset: true)
-            }
-            NavTabbar(active: .home, onHome: {}, onScan: { app.navigate(.scan) }, onSettings: { app.navigate(.settings) })
+            .padding(.bottom, 150)
+        }
+        .scrollIndicators(.hidden)
+        .lwSoftScrollEdges()
+        .refreshable {
+            await app.refreshMe()
+            await app.wallet.refreshBalance()
+            await app.wallet.loadTransactions(reset: true)
         }
         .background(AmbientBackground(intensity: 1, flare: flare, flareAt: flareAt))
         .onChange(of: app.wallet.lastPayment) { _, tx in

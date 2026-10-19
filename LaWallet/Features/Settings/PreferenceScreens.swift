@@ -18,55 +18,52 @@ struct CurrenciesScreen: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                PillHeader(title: t("\(l).title"))
-                List {
-                    Section {
-                        // iOS 16+: long-press a row to drag it; SAT stays pinned first (`normalize` + moveDisabled).
-                        ForEach(active) { c in activeRow(c).moveDisabled(c.locked) }
-                            .onMove { from, to in
-                                var codes = app.currencies.active
-                                codes.move(fromOffsets: from, toOffset: to)
-                                app.currencies.setActive(codes)
-                            }
-                            .listRowBackground(Self.rowGlass)
-                    } header: { header(t("\(l).activeAssets")) } footer: {
-                        Text(t("\(l).hint")).font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity).padding(.top, 6)
-                    }
-
-                    Section {
-                        HStack(spacing: 10) {
-                            Icon("search", size: 16).foregroundStyle(LW.muted)
-                            TextField("", text: $query, prompt: Text(verbatim: t("\(l).searchPlaceholder")).foregroundStyle(LW.muted.opacity(0.8)))
-                                .font(LW.font(16)).foregroundStyle(LW.foreground)
-                                .autocorrectionDisabled().textInputAutocapitalization(.never)
+        VStack(spacing: 0) {
+            PillHeader(title: t("\(l).title"))
+            List {
+                Section {
+                    // iOS 16+: long-press a row to drag it; SAT stays pinned first (`normalize` + moveDisabled).
+                    ForEach(active) { c in activeRow(c).moveDisabled(c.locked) }
+                        .onMove { from, to in
+                            var codes = app.currencies.active
+                            codes.move(fromOffsets: from, toOffset: to)
+                            app.currencies.setActive(codes)
                         }
-                        .padding(.horizontal, 16).frame(minHeight: 54)
-                        .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-                    }
-
-                    Section {
-                        if available.isEmpty {
-                            Text(t("\(l).noMatch")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
-                                .listRowBackground(Self.rowGlass)
-                        } else {
-                            ForEach(available) { c in availableRow(c) }.listRowBackground(Self.rowGlass)
-                        }
-                    } header: { header(t("\(l).available")) }
+                        .listRowBackground(Self.rowGlass)
+                } header: { header(t("\(l).activeAssets")) } footer: {
+                    Text(t("\(l).hint")).font(LW.font(13)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity).padding(.top, 6)
                 }
-                .listStyle(.insetGrouped)
-                .listSectionSpacing(24)
-                .scrollContentBackground(.hidden)
-                .scrollIndicators(.hidden)
-                .lwSoftScrollEdges()
-                .contentMargins(.bottom, 150, for: .scrollContent)
-                .scrollDismissesKeyboard(.immediately)
+
+                Section {
+                    HStack(spacing: 10) {
+                        Icon("search", size: 16).foregroundStyle(LW.muted)
+                        TextField("", text: $query, prompt: Text(verbatim: t("\(l).searchPlaceholder")).foregroundStyle(LW.muted.opacity(0.8)))
+                            .font(LW.font(16)).foregroundStyle(LW.foreground)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                    }
+                    .padding(.horizontal, 16).frame(minHeight: 54)
+                    .lwGlass(in: RoundedRectangle(cornerRadius: LW.Radius.control, style: .continuous))
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
+
+                Section {
+                    if available.isEmpty {
+                        Text(t("\(l).noMatch")).font(LW.font(14)).foregroundStyle(LW.muted).frame(maxWidth: .infinity).padding(.vertical, 24)
+                            .listRowBackground(Self.rowGlass)
+                    } else {
+                        ForEach(available) { c in availableRow(c) }.listRowBackground(Self.rowGlass)
+                    }
+                } header: { header(t("\(l).available")) }
             }
-            SettingsTabbar()
+            .listStyle(.insetGrouped)
+            .listSectionSpacing(24)
+            .scrollContentBackground(.hidden)
+            .scrollIndicators(.hidden)
+            .lwSoftScrollEdges()
+            .contentMargins(.bottom, 150, for: .scrollContent)
+            .scrollDismissesKeyboard(.immediately)
         }
     }
 

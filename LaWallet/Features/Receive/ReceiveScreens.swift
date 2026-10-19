@@ -353,7 +353,7 @@ struct ReceiveInvoiceScreen: View {
         if case .accepted(let at) = nfc { wait = max(0, 1.1 - Date().timeIntervalSince(at)) }
         Task {
             if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
-            app.path = NavigationPath([Route.receiveSummary])
+            app.path = [.receiveSummary]
         }
     }
 }

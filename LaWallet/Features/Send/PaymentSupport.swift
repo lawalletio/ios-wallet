@@ -233,7 +233,7 @@ struct PayReceiptActions: View {
                 }
                 .buttonStyle(.lw(.secondary))
                 .accessibilityIdentifier("summary.share")
-                Button(t("shared.receipt.viewActivity")) { app.path = NavigationPath([Route.activity]) }
+                Button(t("shared.receipt.viewActivity")) { app.path = [.activity] }
                     .buttonStyle(.lw(.secondary))
                     .accessibilityIdentifier("summary.activity")
             }
