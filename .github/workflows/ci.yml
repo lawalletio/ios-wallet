@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      e2e:
+        description: Run the live integration suite against beta.lawallet.io (creates a test account)
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kit:
+    name: LaWalletKit (swift test)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Unit tests
+        working-directory: Packages/LaWalletKit
+        run: swift test
+      - name: Integration (beta.lawallet.io + NWC faucet)
+        if: github.event_name == 'workflow_dispatch' && inputs.e2e
+        working-directory: Packages/LaWalletKit
+        run: |
+          export LAWALLET_E2E_NWC=$(curl -sf -X POST "https://faucet.nwc.dev?balance=1000")
+          export LAWALLET_E2E_PAYER_NWC=$(curl -sf -X POST "https://faucet.nwc.dev?balance=1000")
+          LAWALLET_E2E_URL=https://beta.lawallet.io swift test --filter IntegrationTests
+
+  app:
+    name: App (build + unit tests)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Pick a simulator
+        id: sim
+        run: |
+          NAME=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+( Pro)?' | head -1)
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test -project LaWallet.xcodeproj -scheme LaWallet \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            -only-testing:LaWalletTests \
+            -skipPackagePluginValidation -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO | tail -40

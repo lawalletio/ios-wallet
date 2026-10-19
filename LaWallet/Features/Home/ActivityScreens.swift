@@ -17,8 +17,9 @@ struct ActivityScreen: View {
                     if items.isEmpty {
                         Group {
                             if w.loadingTransactions { ProgressView().tint(LW.muted) }
-                            else if let e = w.transactionsError { Text(e).foregroundStyle(LW.destructiveText) }
-                            else { Text(t("activity.empty.title")).foregroundStyle(LW.muted) }
+                            else if !w.hasWallet { Text(t("activity.connectWallet")).foregroundStyle(LW.muted) }
+                            else if w.transactionsError != nil { Text(t("activity.loadFailed")).foregroundStyle(LW.destructiveText) }
+                            else { Text(t("activity.empty")).foregroundStyle(LW.muted) }
                         }
                         .font(LW.font(14)).frame(maxWidth: .infinity).padding(.vertical, 48)
                     }
@@ -62,20 +63,20 @@ struct ActivityDetailScreen: View {
     var body: some View {
         let tx = item.tx
         VStack(spacing: 0) {
-            ScreenHeader(title: t("activity.detail.title"))
+            ScreenHeader(title: t("activity.title"))
             ScrollView {
                 PaymentReceipt(
                     status: tx.state == .settled ? .settled : tx.state == .failed ? .failed : .pending,
-                    title: item.title,
-                    subtitle: (tx.settledAt ?? tx.createdAt).formatted(date: .abbreviated, time: .shortened),
+                    title: t(tx.state == .pending ? "activity.detail.pending" : tx.state == .failed ? "activity.detail.failed"
+                        : item.incoming ? "activity.detail.received" : "activity.detail.sent"),
+                    subtitle: tx.description.isEmpty ? nil : tx.description,
                     amountSats: tx.amountSats,
                     details: [
-                        (t("shared.receipt.text.status"), t("shared.receipt.\(tx.state.rawValue)")),
-                        (t("activity.detail.type"), t(item.incoming ? "shared.tx.received" : "shared.tx.sent")),
-                        (t("shared.receipt.text.fee"), item.incoming ? nil : "\(tx.feesPaidSats) sats"),
-                        (t("shared.receipt.text.time"), (tx.settledAt ?? tx.createdAt).formatted(date: .numeric, time: .standard))
+                        (t("activity.detail.note"), tx.description.isEmpty ? nil : tx.description),
+                        (t("activity.detail.time"), (tx.settledAt ?? tx.createdAt).formatted(date: .abbreviated, time: .shortened)),
+                        (t("activity.detail.networkFee"), item.incoming ? nil : "\(tx.feesPaidSats) sats")
                     ],
-                    proofs: [(t("shared.receipt.text.paymentHash"), tx.paymentHash), (t("shared.receipt.text.preimage"), tx.preimage)]
+                    proofs: [(t("activity.detail.paymentHash"), tx.paymentHash), (t("activity.detail.preimage"), tx.preimage)]
                 )
                 .padding(16)
             }

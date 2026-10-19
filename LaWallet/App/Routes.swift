@@ -85,6 +85,7 @@ enum ScanRouter {
             return .foreignActivation(URL(string: text)!)
         }
         if text.lowercased().hasPrefix("nostr+walletconnect://") {
+            app.flows.sendInput = text  // RemoteWalletsScreen opens "Add wallet" prefilled with it
             go(.remoteWallets)
             return .handled
         }

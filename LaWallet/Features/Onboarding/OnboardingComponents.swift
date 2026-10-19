@@ -1,0 +1,268 @@
+import LaWalletKit
+import SwiftUI
+
+/// Signed-out page shell (`(auth)/layout.tsx`): optional back header + 24 pt gutters.
+struct OnbPage<Content: View>: View {
+    var back = true
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        VStack(spacing: 0) {
+            if back { ScreenHeader(title: nil) }
+            VStack(spacing: 0) { content() }
+                .padding(.horizontal, 24).padding(.bottom, 24)
+                .frame(maxWidth: 480, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// `h1` + muted lead used at the top of every onboarding screen.
+struct OnbHeading: View {
+    let title: String
+    var subtitle: String?
+    var centered = false
+    var body: some View {
+        VStack(alignment: centered ? .center : .leading, spacing: 8) {
+            Text(title).font(LW.font(24, .semibold)).foregroundStyle(LW.foreground)
+            if let subtitle {
+                Text(subtitle).font(LW.font(14)).foregroundStyle(LW.muted).lineSpacing(3)
+            }
+        }
+        .multilineTextAlignment(centered ? .center : .leading)
+        .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
+    }
+}
+
+/// Icon + text button label (lucide icon at 16 pt).
+struct OnbIconText: View {
+    let icon: String?
+    let text: String
+    var busy = false
+    var body: some View {
+        HStack(spacing: 8) {
+            if busy { ProgressView().controlSize(.small).tint(LW.muted) } else if let icon { Icon(icon, size: 16) }
+            Text(text)
+        }
+    }
+}
+
+/// Small left-aligned destructive line (`text-xs text-destructive`).
+struct OnbError: View {
+    let message: String?
+    var body: some View {
+        if let message, !message.isEmpty {
+            Text(message).font(LW.font(12)).foregroundStyle(LW.destructiveText).frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("error.text")
+        }
+    }
+}
+
+/// Community isotype (`useBrandLogotypes().isotypo`), falling back to the bundled one.
+struct OnbIsotype: View {
+    @Environment(AppModel.self) private var app
+    var body: some View {
+        if let url = app.onbImageURL(app.settings?.isotypo_url) {
+            RemoteImage(url: url, contentMode: .fit)
+        } else {
+            Image("isotypo").resizable().scaledToFit()
+        }
+    }
+}
+
+struct OnbLogotype: View {
+    @Environment(AppModel.self) private var app
+    var body: some View {
+        if let url = app.onbImageURL(app.settings?.logotype_url) {
+            RemoteImage(url: url, contentMode: .fit)
+        } else {
+            Image("logotype").resizable().scaledToFit()
+        }
+    }
+}
+
+extension AppModel {
+    /// Settings image URLs may be root-relative; resolve them against the public endpoint.
+    func onbImageURL(_ raw: String?) -> URL? {
+        guard let raw = raw?.trimmingCharacters(in: .whitespaces), !raw.isEmpty else { return nil }
+        return URL(string: raw, relativeTo: endpoint)?.absoluteURL
+    }
+
+    /// `community_name?.trim() || 'LaWallet'`.
+    var onbCommunityName: String {
+        let name = communityName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "LaWallet" : name
+    }
+}
+
+/// shared/secret-key-reveal.tsx — blurred-by-default nsec with reveal, copy and an optional "I saved it" checkbox.
+struct OnbSecretKeyReveal: View {
+    let nsec: String
+    var disabled = false
+    var confirmed: Binding<Bool>?
+    var confirmLabel: String?
+    var idPrefix = "create"
+    @Environment(AppModel.self) private var app
+    @State private var revealed = false
+    @State private var copied = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Text(nsec)
+                    .font(.system(size: 12, design: .monospaced)).foregroundStyle(LW.foreground)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .blur(radius: revealed ? 0 : 4)
+                    .accessibilityIdentifier("\(idPrefix).nsec")
+                Button { revealed.toggle() } label: {
+                    Icon(revealed ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+                }
+                .accessibilityLabel(t(revealed ? "auth.hideKey" : "auth.revealKey"))
+                .accessibilityIdentifier("\(idPrefix).reveal")
+            }
+            .padding(.leading, 16).padding(.trailing, 8).padding(.vertical, 8)
+            .background(LW.card)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(LW.border))
+
+            Button(action: copy) { OnbIconText(icon: copied ? "check" : "copy", text: copied ? t("common.copied") : t("auth.copyKey")) }
+                .buttonStyle(.lw(.secondary, height: 40))
+                .disabled(disabled)
+                .accessibilityIdentifier("\(idPrefix).copy")
+
+            if let confirmed {
+                Button { confirmed.wrappedValue.toggle(); Haptics.tap() } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        OnbCheckbox(on: confirmed.wrappedValue).padding(.top, 2)
+                        Text(confirmLabel ?? t("auth.savedKeyConfirm")).font(LW.font(14)).foregroundStyle(LW.foreground)
+                            .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(LW.card.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(LW.border))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(disabled)
+                .accessibilityAddTraits(confirmed.wrappedValue ? .isSelected : [])
+                .accessibilityIdentifier("\(idPrefix).backedUp")
+            }
+        }
+    }
+
+    private func copy() {
+        UIPasteboard.general.string = nsec
+        copied = true
+        Haptics.tap()
+        app.show(.success, t("auth.keyCopied"))
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            copied = false
+        }
+    }
+}
+
+struct OnbCheckbox: View {
+    let on: Bool
+    var body: some View {
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .fill(on ? LW.foreground : .clear)
+            .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(on ? LW.foreground : LW.ring))
+            .overlay { if on { Icon("check", size: 12).foregroundStyle(LW.background) } }
+            .frame(width: 16, height: 16)
+    }
+}
+
+/// shared/passkey-login-button.tsx — the single passkey entry point (register or authenticate) with busy/error states.
+struct OnbPasskeyButton: View {
+    enum Mode { case register, authenticate }
+    let mode: Mode
+    var label: String?
+    var kind: LWButtonKind = .theme
+    var showCrossDeviceHint = false
+    /// Show "prompt was closed" inline (never a toast) so a cancel has an obvious retry.
+    var surfaceCancel = false
+    var duplicateMessage: String?
+    var id = "passkey.button"
+    var onStart: () -> Void = {}
+    var onFailure: () -> Void = {}
+    @Environment(AppModel.self) private var app
+    @State private var busy = false
+    @State private var error: String?
+
+    var body: some View {
+        if PasskeyService.isSupported {
+            VStack(spacing: 8) {
+                Button(action: run) {
+                    OnbIconText(icon: "fingerprint", text: busy ? t("auth.waitingForDevice") : buttonLabel, busy: busy)
+                }
+                .buttonStyle(.lw(kind))
+                .disabled(busy)
+                .accessibilityIdentifier(id)
+                OnbError(message: error)
+                if showCrossDeviceHint {
+                    Text(t("auth.crossDeviceHint")).font(LW.font(12)).foregroundStyle(LW.muted).frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+
+    private var buttonLabel: String { label ?? t(mode == .register ? "auth.createWithPasskey" : "auth.continueWithPasskey") }
+
+    private func run() {
+        error = nil
+        busy = true
+        onStart()
+        Task {
+            do {
+                switch mode {
+                case .register: try await PasskeyService.shared.createAccount(app: app)
+                case .authenticate: try await PasskeyService.shared.login(app: app)
+                }
+            } catch {
+                onFailure()
+                let e = PasskeyError.from(error)
+                if e == .cancelled {
+                    if surfaceCancel { self.error = e.localizedDescription }
+                } else {
+                    let message = (e.isDuplicate ? duplicateMessage : nil) ?? e.localizedDescription
+                    self.error = message
+                    app.show(.error, message)
+                    Haptics.error()
+                }
+            }
+            busy = false
+        }
+    }
+}
+
+/// Input with a trailing show/hide toggle (`nostr-connect-form.tsx` key + bunker fields).
+struct OnbRevealField: View {
+    let placeholder: String
+    @Binding var text: String
+    var invalid = false
+    var id: String
+    @State private var shown = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Group {
+                if shown { TextField(placeholder, text: $text) } else { SecureField(placeholder, text: $text) }
+            }
+            .font(.system(size: 15, design: .monospaced))
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .textContentType(.none)
+            .accessibilityIdentifier(id)
+            Button { shown.toggle() } label: {
+                Icon(shown ? "eye-off" : "eye", size: 16).foregroundStyle(LW.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+            }
+            .accessibilityLabel(t("auth.toggleKeyVisibility"))
+        }
+        .padding(.leading, 14).padding(.trailing, 8).frame(minHeight: 52)
+        .background(LW.background)
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(invalid ? LW.destructiveText : LW.border))
+        .foregroundStyle(LW.foreground)
+    }
+}

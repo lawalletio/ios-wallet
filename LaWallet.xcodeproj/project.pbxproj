@@ -9,27 +9,38 @@
 /* Begin PBXBuildFile section */
 		045798B4738D236D8F414D05 /* L10nTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26CB68A3A09988B3CC2BEF93 /* L10nTests.swift */; };
 		064E6EBF910C67572EA7D7C8 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FDF76244BA1CCD537C5E4A5 /* Stores.swift */; };
-		08CA1A25C5757EFD1A816786 /* LaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58BB285926379976399AB169 /* LaunchTests.swift */; };
+		092D3C54E0547A851CA07481 /* PaymentSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A238BA3F4A575F21765DB10 /* PaymentSupport.swift */; };
 		0CD16125B302698CE5A22B80 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 146D2FA3EE1F11BC12C02CD2 /* Inter.ttf */; };
 		1084F5E2CED020179069AB37 /* wallet.json in Resources */ = {isa = PBXBuildFile; fileRef = 5CA9BD07279E1C967524C23B /* wallet.json */; };
-		111A0F815F0F355845EFC8BC /* OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 6F0D68EA1D842A598696F5AA /* OFL.txt */; };
 		11A53E1F508BD22393D59822 /* NFCReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D7810B7741E87D044D22A29 /* NFCReader.swift */; };
 		289B6187CEEFCA451DFB0877 /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2A5E5BBE978510E118BB42 /* HomeScreen.swift */; };
 		33E837E8586C5F536864A161 /* ActivityScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 483A427C8B3F8514F36CFE05 /* ActivityScreens.swift */; };
 		34034E89BD21480B7AD70EF9 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44EF2FF23EF99FD32A931E8 /* AppModel.swift */; };
 		4B79C31AFDEE7BA339A7D99E /* ClaimUsernameScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2785B6B5CC02877ABAB86BD9 /* ClaimUsernameScreen.swift */; };
+		4C0FE0BADEC8682B925B2853 /* SecurityScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1006EA7AA5F8D4B05A602E51 /* SecurityScreen.swift */; };
+		619123C2AC10E41E78CE6E6F /* ClaimCelebration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032A54B0A5685AC5890B69C6 /* ClaimCelebration.swift */; };
+		6AEEDA336EEC4F63E7531C7E /* RemoteWalletDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D922682BAF477334DF32BDAB /* RemoteWalletDetailScreen.swift */; };
+		6D0B356F8F7216CB27F88B4B /* NostrLoginScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF03880EB3C552DFF99F55D /* NostrLoginScreen.swift */; };
+		77B716605751F8B5B6F1A6CC /* ios-onboarding.json in Resources */ = {isa = PBXBuildFile; fileRef = C59173AFCFB2E16B2EFB4C9D /* ios-onboarding.json */; };
 		7E77927743F29017AEB842BD /* WithdrawScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E504C9EC16304F2234CDE2D /* WithdrawScreen.swift */; };
+		7F4ECD69532B78E1AC51D346 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057EC16ADA254681C06ED82F /* OnboardingComponents.swift */; };
 		80E9B5AE9B64F3AA8C5D275C /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC416AF23376F4F1502CAF0A /* L10n.swift */; };
+		8618DFBBD7292FFB8472A188 /* Inter-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 13F6ECD050B6079ECDE7A787 /* Inter-OFL.txt */; };
 		90739524D50F7455B4A89F6E /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 37E5914C667AC4AD68E2494F /* Lottie */; };
 		95636640AE57528B66969C81 /* ScanScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC38BC0118F08B6790AA946 /* ScanScreen.swift */; };
+		A541C1552FD9FF83D5BAC076 /* ios-settings.json in Resources */ = {isa = PBXBuildFile; fileRef = 0ADA27949A2024FB02BFC1C2 /* ios-settings.json */; };
 		A887DC6F46E9186A76A1DA33 /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0389D1EA0BD8D04DF403EA7 /* Notifier.swift */; };
 		A93659BEEC2F1F103BB5D507 /* PaymentReceipt.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C45E9F0F91A657CC777CF /* PaymentReceipt.swift */; };
 		B69D79C2B645B7331AE440DA /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */; };
 		C5730E6ECE5BDAE1AED26DE8 /* SendScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBEE6A55A09758948A55997 /* SendScreens.swift */; };
 		C7FCFDE80C48269B900A102D /* LaWalletKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4F1B787E6C6983F6A712E64E /* LaWalletKit */; };
+		C8F56DCE4281CCE018C31913 /* WalletFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 743C2CBC793A15C118B33087 /* WalletFlowTests.swift */; };
 		C94FC060C2F5875FDDF695BE /* ActivateScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0345F360749D6F7E08DE4CB2 /* ActivateScreen.swift */; };
+		C99CB62D185F53FEB38D1383 /* ActivationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C38A7109D3FA3810CA10B7BB /* ActivationCard.swift */; };
 		CB56D7B6462C5BD5316AA393 /* sapeee-el-bananero.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 548E6E2675A953E227E5BA89 /* sapeee-el-bananero.mp3 */; };
 		D11BCCFBA3D7FBFE8F37A030 /* ReceiveScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7862821B3D19F09EEE8B8925 /* ReceiveScreens.swift */; };
+		D1945B5EE0E3F37729F08006 /* RemoteWalletsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F912EAB88FA2A85F1C077E4 /* RemoteWalletsScreen.swift */; };
+		D1F837E1E9490FF24636685F /* PreferenceScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988DF7EAB3E934AC0A1008B6 /* PreferenceScreens.swift */; };
 		D277EBADA7ECE119224BF320 /* PasskeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C3CA35CA59514B735319231 /* PasskeyService.swift */; };
 		D34380CE6F7C11B0468A9884 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D49E89FB1482FC50CEAF94B /* Components.swift */; };
 		D4C6DA5802821CE0271BBD6D /* treasure-chest.lottie in Resources */ = {isa = PBXBuildFile; fileRef = 7BEB516EC2D5B6B041D2DB63 /* treasure-chest.lottie */; };
@@ -41,6 +52,9 @@
 		E9BB3C050007C3823BB3AF0B /* Routes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14743D6EE2FF30A71EC05DF8 /* Routes.swift */; };
 		EA8B516951A5E53FACB8930D /* SettingsScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */; };
 		F086FC3B91DFF2C1F5275C28 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980CE734EBBC38F6E27FC9AC /* Keychain.swift */; };
+		F97E7B006FA44D8D66751E1E /* ios-payments.json in Resources */ = {isa = PBXBuildFile; fileRef = 56CB7E68F47C54264692248A /* ios-payments.json */; };
+		FA30B0B7AC693FA145408217 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A60D44684EB97C69BA14D49 /* QRScannerView.swift */; };
+		FE59A2C6C55979DBFF38C468 /* CardsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DC26AF20FDD529590C4F7FF /* CardsScreen.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,43 +75,60 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		001422E99232B8C25142A1AD /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = "en.lproj/ios-onboarding.json"; sourceTree = "<group>"; };
+		032A54B0A5685AC5890B69C6 /* ClaimCelebration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimCelebration.swift; sourceTree = "<group>"; };
 		0345F360749D6F7E08DE4CB2 /* ActivateScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateScreen.swift; sourceTree = "<group>"; };
+		057EC16ADA254681C06ED82F /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
 		0D2A5E5BBE978510E118BB42 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		0D49E89FB1482FC50CEAF94B /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		0DC26AF20FDD529590C4F7FF /* CardsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsScreen.swift; sourceTree = "<group>"; };
+		1006EA7AA5F8D4B05A602E51 /* SecurityScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityScreen.swift; sourceTree = "<group>"; };
+		1131D5AE4324E3A070514B1B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = "es.lproj/ios-onboarding.json"; sourceTree = "<group>"; };
+		13F6ECD050B6079ECDE7A787 /* Inter-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Inter-OFL.txt"; sourceTree = "<group>"; };
 		146D2FA3EE1F11BC12C02CD2 /* Inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Inter.ttf; sourceTree = "<group>"; };
 		14743D6EE2FF30A71EC05DF8 /* Routes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Routes.swift; sourceTree = "<group>"; };
+		1A60D44684EB97C69BA14D49 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		26CB68A3A09988B3CC2BEF93 /* L10nTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10nTests.swift; sourceTree = "<group>"; };
 		2785B6B5CC02877ABAB86BD9 /* ClaimUsernameScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimUsernameScreen.swift; sourceTree = "<group>"; };
+		2A238BA3F4A575F21765DB10 /* PaymentSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentSupport.swift; sourceTree = "<group>"; };
 		2DC32B2056C6D7BC5B653FF1 /* LaWalletTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LaWalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E504C9EC16304F2234CDE2D /* WithdrawScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WithdrawScreen.swift; sourceTree = "<group>"; };
 		2EC04CBB95EF7ED6989A0912 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = es.lproj/wallet.json; sourceTree = "<group>"; };
 		34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreens.swift; sourceTree = "<group>"; };
+		36665F057B03ECA2F8AFEE8B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = "es.lproj/ios-settings.json"; sourceTree = "<group>"; };
 		3C3CA35CA59514B735319231 /* PasskeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyService.swift; sourceTree = "<group>"; };
 		434481B9E55AEC337BCD0B48 /* LaWallet.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LaWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		483A427C8B3F8514F36CFE05 /* ActivityScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityScreens.swift; sourceTree = "<group>"; };
 		4D7810B7741E87D044D22A29 /* NFCReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCReader.swift; sourceTree = "<group>"; };
 		548E6E2675A953E227E5BA89 /* sapeee-el-bananero.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "sapeee-el-bananero.mp3"; sourceTree = "<group>"; };
-		58BB285926379976399AB169 /* LaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTests.swift; sourceTree = "<group>"; };
 		6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreens.swift; sourceTree = "<group>"; };
 		6AC38BC0118F08B6790AA946 /* ScanScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanScreen.swift; sourceTree = "<group>"; };
-		6F0D68EA1D842A598696F5AA /* OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = OFL.txt; sourceTree = "<group>"; };
 		724294EA6A6E247298AF6F70 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = es.lproj/ios.json; sourceTree = "<group>"; };
+		743C2CBC793A15C118B33087 /* WalletFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletFlowTests.swift; sourceTree = "<group>"; };
 		7862821B3D19F09EEE8B8925 /* ReceiveScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiveScreens.swift; sourceTree = "<group>"; };
 		7BEB516EC2D5B6B041D2DB63 /* treasure-chest.lottie */ = {isa = PBXFileReference; path = "treasure-chest.lottie"; sourceTree = "<group>"; };
 		8DF72DFF4678C899B3A5FA91 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8FDF76244BA1CCD537C5E4A5 /* Stores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stores.swift; sourceTree = "<group>"; };
 		90D30CF74B3D2A04E15ED2CB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9534FA35CAC823EE76B20B50 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = "en.lproj/ios-payments.json"; sourceTree = "<group>"; };
 		980CE734EBBC38F6E27FC9AC /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		988DF7EAB3E934AC0A1008B6 /* PreferenceScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceScreens.swift; sourceTree = "<group>"; };
+		9F912EAB88FA2A85F1C077E4 /* RemoteWalletsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteWalletsScreen.swift; sourceTree = "<group>"; };
 		ACA762743FC8852FA3F7B8F5 /* WalletStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletStore.swift; sourceTree = "<group>"; };
 		ADA67BC6A317A91B9BA73BCA /* LaWallet.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LaWallet.entitlements; sourceTree = "<group>"; };
 		B44EF2FF23EF99FD32A931E8 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		BBF03880EB3C552DFF99F55D /* NostrLoginScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NostrLoginScreen.swift; sourceTree = "<group>"; };
 		C0389D1EA0BD8D04DF403EA7 /* Notifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifier.swift; sourceTree = "<group>"; };
 		C0ABF6D0CF6DD261E0EE1DA0 /* LaWalletUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LaWalletUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C190AF1F81656BDC77237BF1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = en.lproj/wallet.json; sourceTree = "<group>"; };
 		C2E992861479FD9D8DA4D153 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = en.lproj/ios.json; sourceTree = "<group>"; };
+		C314354A0AE25103950E2C2E /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = "es.lproj/ios-payments.json"; sourceTree = "<group>"; };
+		C38A7109D3FA3810CA10B7BB /* ActivationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivationCard.swift; sourceTree = "<group>"; };
 		CCE831AEDF258A216918668A /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		D922682BAF477334DF32BDAB /* RemoteWalletDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteWalletDetailScreen.swift; sourceTree = "<group>"; };
 		DCBEE6A55A09758948A55997 /* SendScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendScreens.swift; sourceTree = "<group>"; };
 		DE3BFE482968B08A4C178ED0 /* LaWalletKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LaWalletKit; path = Packages/LaWalletKit; sourceTree = SOURCE_ROOT; };
+		E16CE97222621E0EA2872F06 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = "en.lproj/ios-settings.json"; sourceTree = "<group>"; };
 		EC416AF23376F4F1502CAF0A /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		F11C45E9F0F91A657CC777CF /* PaymentReceipt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentReceipt.swift; sourceTree = "<group>"; };
 		F664E78FCC8DEDCA5F68AE11 /* LaWalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaWalletApp.swift; sourceTree = "<group>"; };
@@ -146,7 +177,7 @@
 		1AEC59A70BA629276A454722 /* LaWalletUITests */ = {
 			isa = PBXGroup;
 			children = (
-				58BB285926379976399AB169 /* LaunchTests.swift */,
+				743C2CBC793A15C118B33087 /* WalletFlowTests.swift */,
 			);
 			path = LaWalletUITests;
 			sourceTree = "<group>";
@@ -162,6 +193,7 @@
 		27675598669AF9AF7C0AB191 /* Send */ = {
 			isa = PBXGroup;
 			children = (
+				2A238BA3F4A575F21765DB10 /* PaymentSupport.swift */,
 				DCBEE6A55A09758948A55997 /* SendScreens.swift */,
 			);
 			path = Send;
@@ -171,6 +203,7 @@
 			isa = PBXGroup;
 			children = (
 				0345F360749D6F7E08DE4CB2 /* ActivateScreen.swift */,
+				C38A7109D3FA3810CA10B7BB /* ActivationCard.swift */,
 			);
 			path = Activate;
 			sourceTree = "<group>";
@@ -178,6 +211,11 @@
 		4E2C3BDC7E7A3D3DAF297BB7 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				0DC26AF20FDD529590C4F7FF /* CardsScreen.swift */,
+				988DF7EAB3E934AC0A1008B6 /* PreferenceScreens.swift */,
+				D922682BAF477334DF32BDAB /* RemoteWalletDetailScreen.swift */,
+				9F912EAB88FA2A85F1C077E4 /* RemoteWalletsScreen.swift */,
+				1006EA7AA5F8D4B05A602E51 /* SecurityScreen.swift */,
 				34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */,
 			);
 			path = Settings;
@@ -199,6 +237,7 @@
 		5E2E7C511C41E6EF27DE8AAA /* Withdraw */ = {
 			isa = PBXGroup;
 			children = (
+				032A54B0A5685AC5890B69C6 /* ClaimCelebration.swift */,
 				2E504C9EC16304F2234CDE2D /* WithdrawScreen.swift */,
 			);
 			path = Withdraw;
@@ -218,6 +257,9 @@
 				8DF72DFF4678C899B3A5FA91 /* Assets.xcassets */,
 				C9770863B7D6F0513EFB2AD7 /* Animations */,
 				AFF43597A4B2C46EC9300A96 /* Fonts */,
+				C59173AFCFB2E16B2EFB4C9D /* ios-onboarding.json */,
+				56CB7E68F47C54264692248A /* ios-payments.json */,
+				0ADA27949A2024FB02BFC1C2 /* ios-settings.json */,
 				40BF806F6E215DC5D52DC19A /* ios.json */,
 				C12F0266F4057540A94F9DA1 /* Sounds */,
 				5CA9BD07279E1C967524C23B /* wallet.json */,
@@ -238,6 +280,7 @@
 		9DAD35ECEB7E737D670E4228 /* Scan */ = {
 			isa = PBXGroup;
 			children = (
+				1A60D44684EB97C69BA14D49 /* QRScannerView.swift */,
 				6AC38BC0118F08B6790AA946 /* ScanScreen.swift */,
 			);
 			path = Scan;
@@ -246,8 +289,8 @@
 		AFF43597A4B2C46EC9300A96 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
+				13F6ECD050B6079ECDE7A787 /* Inter-OFL.txt */,
 				146D2FA3EE1F11BC12C02CD2 /* Inter.ttf */,
-				6F0D68EA1D842A598696F5AA /* OFL.txt */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -281,6 +324,8 @@
 		CB7A4BE7F01DC1071EB2FD7D /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				BBF03880EB3C552DFF99F55D /* NostrLoginScreen.swift */,
+				057EC16ADA254681C06ED82F /* OnboardingComponents.swift */,
 				6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */,
 			);
 			path = Onboarding;
@@ -452,8 +497,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				E229CF82E422BFB00511A07B /* Assets.xcassets in Resources */,
+				8618DFBBD7292FFB8472A188 /* Inter-OFL.txt in Resources */,
 				0CD16125B302698CE5A22B80 /* Inter.ttf in Resources */,
-				111A0F815F0F355845EFC8BC /* OFL.txt in Resources */,
+				77B716605751F8B5B6F1A6CC /* ios-onboarding.json in Resources */,
+				F97E7B006FA44D8D66751E1E /* ios-payments.json in Resources */,
+				A541C1552FD9FF83D5BAC076 /* ios-settings.json in Resources */,
 				E255AE68A69BD653FC9CBBB5 /* ios.json in Resources */,
 				CB56D7B6462C5BD5316AA393 /* sapeee-el-bananero.mp3 in Resources */,
 				D4C6DA5802821CE0271BBD6D /* treasure-chest.lottie in Resources */,
@@ -477,8 +525,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				C94FC060C2F5875FDDF695BE /* ActivateScreen.swift in Sources */,
+				C99CB62D185F53FEB38D1383 /* ActivationCard.swift in Sources */,
 				33E837E8586C5F536864A161 /* ActivityScreens.swift in Sources */,
 				34034E89BD21480B7AD70EF9 /* AppModel.swift in Sources */,
+				FE59A2C6C55979DBFF38C468 /* CardsScreen.swift in Sources */,
+				619123C2AC10E41E78CE6E6F /* ClaimCelebration.swift in Sources */,
 				4B79C31AFDEE7BA339A7D99E /* ClaimUsernameScreen.swift in Sources */,
 				D34380CE6F7C11B0468A9884 /* Components.swift in Sources */,
 				289B6187CEEFCA451DFB0877 /* HomeScreen.swift in Sources */,
@@ -486,13 +537,21 @@
 				80E9B5AE9B64F3AA8C5D275C /* L10n.swift in Sources */,
 				D535A5BA8B3FA4976265A984 /* LaWalletApp.swift in Sources */,
 				11A53E1F508BD22393D59822 /* NFCReader.swift in Sources */,
+				6D0B356F8F7216CB27F88B4B /* NostrLoginScreen.swift in Sources */,
 				A887DC6F46E9186A76A1DA33 /* Notifier.swift in Sources */,
+				7F4ECD69532B78E1AC51D346 /* OnboardingComponents.swift in Sources */,
 				B69D79C2B645B7331AE440DA /* OnboardingScreens.swift in Sources */,
 				D277EBADA7ECE119224BF320 /* PasskeyService.swift in Sources */,
 				A93659BEEC2F1F103BB5D507 /* PaymentReceipt.swift in Sources */,
+				092D3C54E0547A851CA07481 /* PaymentSupport.swift in Sources */,
+				D1F837E1E9490FF24636685F /* PreferenceScreens.swift in Sources */,
+				FA30B0B7AC693FA145408217 /* QRScannerView.swift in Sources */,
 				D11BCCFBA3D7FBFE8F37A030 /* ReceiveScreens.swift in Sources */,
+				6AEEDA336EEC4F63E7531C7E /* RemoteWalletDetailScreen.swift in Sources */,
+				D1945B5EE0E3F37729F08006 /* RemoteWalletsScreen.swift in Sources */,
 				E9BB3C050007C3823BB3AF0B /* Routes.swift in Sources */,
 				95636640AE57528B66969C81 /* ScanScreen.swift in Sources */,
+				4C0FE0BADEC8682B925B2853 /* SecurityScreen.swift in Sources */,
 				C5730E6ECE5BDAE1AED26DE8 /* SendScreens.swift in Sources */,
 				EA8B516951A5E53FACB8930D /* SettingsScreens.swift in Sources */,
 				064E6EBF910C67572EA7D7C8 /* Stores.swift in Sources */,
@@ -506,7 +565,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				08CA1A25C5757EFD1A816786 /* LaunchTests.swift in Sources */,
+				C8F56DCE4281CCE018C31913 /* WalletFlowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -526,6 +585,15 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		0ADA27949A2024FB02BFC1C2 /* ios-settings.json */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E16CE97222621E0EA2872F06 /* en */,
+				36665F057B03ECA2F8AFEE8B /* es */,
+			);
+			name = "ios-settings.json";
+			sourceTree = "<group>";
+		};
 		40BF806F6E215DC5D52DC19A /* ios.json */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -535,6 +603,15 @@
 			name = ios.json;
 			sourceTree = "<group>";
 		};
+		56CB7E68F47C54264692248A /* ios-payments.json */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9534FA35CAC823EE76B20B50 /* en */,
+				C314354A0AE25103950E2C2E /* es */,
+			);
+			name = "ios-payments.json";
+			sourceTree = "<group>";
+		};
 		5CA9BD07279E1C967524C23B /* wallet.json */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -542,6 +619,15 @@
 				2EC04CBB95EF7ED6989A0912 /* es */,
 			);
 			name = wallet.json;
+			sourceTree = "<group>";
+		};
+		C59173AFCFB2E16B2EFB4C9D /* ios-onboarding.json */ = {
+			isa = PBXVariantGroup;
+			children = (
+				001422E99232B8C25142A1AD /* en */,
+				1131D5AE4324E3A070514B1B /* es */,
+			);
+			name = "ios-onboarding.json";
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

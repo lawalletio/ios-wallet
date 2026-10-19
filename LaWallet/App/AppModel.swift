@@ -155,18 +155,15 @@ final class AppModel {
     }
 
     private func login(signer s: any NostrSigner, pubkey pk: String, method: LoginMethod, persist: () -> Void) async throws {
+        // Mint first: flipping `signer` swaps RootView to the signed-in tree, so only do it once auth succeeded.
+        let token = try await LaWalletAPI(http: HTTPClient(baseURL: endpoint)).mintJWT(signer: s).token
         signer = s
         pubkey = pk
         loginMethod = method
-        jwt = nil
-        do {
-            _ = try await validJWT()
-        } catch {
-            signer = nil
-            pubkey = nil
-            loginMethod = nil
-            throw error
-        }
+        jwt = token
+        jwtExpiry = Self.jwtExpiry(token) ?? Date().addingTimeInterval(3600)
+        Keychain.set(token, for: "jwt")
+        if let r = Self.jwtClaims(token)?["role"]?.string { role = r }
         persist()
         Keychain.set(method.rawValue, for: "login-method")
         await refreshMe()
@@ -206,7 +203,7 @@ final class AppModel {
         return token
     }
 
-    static func jwtClaims(_ token: String) -> JSONValue? {
+    nonisolated static func jwtClaims(_ token: String) -> JSONValue? {
         let parts = token.split(separator: ".")
         guard parts.count == 3 else { return nil }
         var b64 = parts[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
@@ -214,7 +211,7 @@ final class AppModel {
         return Data(base64Encoded: b64).flatMap { try? JSONValue.parse($0) }
     }
 
-    static func jwtExpiry(_ token: String) -> Date? { jwtClaims(token)?["exp"]?.double.map(Date.init(timeIntervalSince1970:)) }
+    nonisolated static func jwtExpiry(_ token: String) -> Date? { jwtClaims(token)?["exp"]?.double.map(Date.init(timeIntervalSince1970:)) }
 
     // MARK: user
 

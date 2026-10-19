@@ -1,0 +1,12 @@
+{
+ "ios.pay.paste": "Paste",
+ "ios.pay.range": "{min}–{max} sats",
+ "ios.pay.amountRange": "Amount must be between {min} and {max} sats",
+ "ios.pay.expiresIn": "Expires in {time}",
+ "ios.pay.expired": "This invoice expired.",
+ "ios.pay.newInvoice": "New invoice",
+ "ios.pay.noCamera": "This device has no camera. Paste a code or tap a card instead.",
+ "ios.pay.torch": "Flashlight",
+ "ios.pay.claimDisabled": "Claiming Lightning addresses is disabled on this instance.",
+ "scan.unsupported": "Unrecognized QR code"
+}

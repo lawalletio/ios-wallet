@@ -195,7 +195,7 @@ public actor Relay {
 }
 
 /// Runs `op` against `timeout`; `op` must itself honour cancellation (all Kit waits do, via their own timers).
-func withTimeout<T: Sendable>(_ timeout: Duration, _ op: @escaping @Sendable () async throws -> T) async throws -> T {
+public func withTimeout<T: Sendable>(_ timeout: Duration, _ op: @escaping @Sendable () async throws -> T) async throws -> T {
     try await withThrowingTaskGroup(of: T.self) { group in
         group.addTask { try await op() }
         group.addTask {

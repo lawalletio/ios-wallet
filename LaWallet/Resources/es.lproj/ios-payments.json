@@ -1,0 +1,12 @@
+{
+ "ios.pay.paste": "Pegar",
+ "ios.pay.range": "{min}–{max} sats",
+ "ios.pay.amountRange": "El monto debe estar entre {min} y {max} sats",
+ "ios.pay.expiresIn": "Vence en {time}",
+ "ios.pay.expired": "Esta factura venció.",
+ "ios.pay.newInvoice": "Nueva factura",
+ "ios.pay.noCamera": "Este dispositivo no tiene cámara. Pegá un código o acercá una tarjeta.",
+ "ios.pay.torch": "Linterna",
+ "ios.pay.claimDisabled": "Reclamar direcciones Lightning está deshabilitado en esta instancia.",
+ "scan.unsupported": "Código QR no reconocido"
+}
