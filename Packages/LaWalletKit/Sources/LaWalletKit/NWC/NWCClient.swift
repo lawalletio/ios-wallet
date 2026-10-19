@@ -231,7 +231,9 @@ public actor NWCClient {
     /// NIP-47 notifications (`payment_received` / `payment_sent`), deduped across the nip04 and nip44 kinds.
     public func notifications() async -> AsyncStream<NWCNotification> {
         let relay = await Relay.shared(relayURL)
-        let since = Int(Date().timeIntervalSince1970) - 5
+        // Only events published from now on: a look-back window makes the relay replay recent notifications, which the
+        // app would re-announce (and briefly re-add to the balance) right after launch or a reconnect.
+        let since = Int(Date().timeIntervalSince1970)
         let events = await relay.subscribe([["kinds": [23196, 23197], "authors": [.string(connection.walletPubkey)],
                                               "#p": [.string(keys.publicKey)], "since": .number(Double(since))]])
         let keys = keys, wallet = connection.walletPubkey

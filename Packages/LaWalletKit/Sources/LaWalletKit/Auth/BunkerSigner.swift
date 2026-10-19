@@ -75,7 +75,7 @@ public actor BunkerSigner: NostrSigner {
                                          timeout: Duration = .seconds(300)) async throws -> BunkerSigner {
         let relay = await Relay.shared(relays[0])
         let stream = await relay.subscribe([["kinds": [24133], "#p": [.string(clientKeys.publicKey)],
-                                             "since": .number(Date().timeIntervalSince1970 - 10)]])
+                                             "since": .number((Date().timeIntervalSince1970 - 10).rounded(.down))]])
         let remote: String = try await withTimeout(timeout) {
             for await ev in stream {
                 guard let plain = decrypt(ev.content, keys: clientKeys, peer: ev.pubkey),

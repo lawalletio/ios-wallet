@@ -19,7 +19,9 @@ final class WalletStore {
     enum Status: Equatable { case none, connecting, connected, error(String) }
 
     private(set) var status: Status = .none
-    private(set) var balance: Int?
+    /// Counts each payment once and drops stale `get_balance` reads (see `BalanceTracker`).
+    private var tracker = BalanceTracker()
+    var balance: Int? { tracker.value }
     private(set) var balanceIsCached = false
     private(set) var transactions: [TxItem] = []
     private(set) var loadingTransactions = false
@@ -43,7 +45,10 @@ final class WalletStore {
         client = c
         Keychain.set(nwc, for: "nwc-uri")
         status = .connecting
-        if let cached = UserDefaults.standard.object(forKey: cacheKey("balance")) as? Int { balance = cached; balanceIsCached = true }
+        if let cached = UserDefaults.standard.object(forKey: cacheKey("balance")) as? Int {
+            tracker = BalanceTracker(value: cached)
+            balanceIsCached = true
+        }
         if let data = UserDefaults.standard.data(forKey: cacheKey("tx")), let txs = try? JSONDecoder().decode([NWCTransaction].self, from: data) {
             transactions = txs.map(TxItem.init)
         }
@@ -72,7 +77,7 @@ final class WalletStore {
         client = nil
         uri = nil
         status = .none
-        balance = nil
+        tracker = BalanceTracker()
         transactions = []
         hasMore = true
     }
@@ -88,13 +93,15 @@ final class WalletStore {
 
     func refreshBalance() async {
         guard let client else { return }
+        let ticket = tracker.beginRead()
         do {
             let sats = try await client.getBalanceSats()
             guard client === self.client else { return }
-            balance = sats
-            balanceIsCached = false
             status = .connected
-            UserDefaults.standard.set(sats, forKey: cacheKey("balance"))
+            if tracker.applyRead(sats, ticket: ticket) {
+                balanceIsCached = false
+                UserDefaults.standard.set(sats, forKey: cacheKey("balance"))
+            }
         } catch {
             if balance == nil || status != .connected { status = .error(Self.message(error)) }
         }
@@ -118,13 +125,21 @@ final class WalletStore {
         }
     }
 
-    private func receive(_ tx: NWCTransaction) {
+    /// One path for live notifications and our own optimistic copy. The row is always refreshed (the notification
+    /// carries the wallet's fee/preimage), but the balance, notice and sound happen only the first time a payment is seen.
+    func receive(_ tx: NWCTransaction) {
+        let existing = transactions.firstIndex { $0.tx.paymentHash.lowercased() == tx.paymentHash.lowercased() && $0.tx.type == tx.type }
+        if let existing { transactions[existing] = TxItem(tx: tx) } else { transactions.insert(TxItem(tx: tx), at: 0) }
+        guard tracker.applyPayment(tx) else { return }
         lastPayment = tx
-        transactions.removeAll { $0.tx.paymentHash == tx.paymentHash && $0.tx.type == tx.type }
-        transactions.insert(TxItem(tx: tx), at: 0)
-        if let b = balance { balance = tx.type == .incoming ? b + tx.amountSats : max(0, b - tx.amountSats - tx.feesPaidSats) }
         onPayment?(tx)
-        Task { await refreshBalance() }
+        // Confirm against the wallet: soon, again, and once after the grace window so a fee difference settles.
+        Task { [weak self] in
+            for delay in [1.0, 4.0, 11.0] {
+                try? await Task.sleep(for: .seconds(delay))
+                await self?.refreshBalance()
+            }
+        }
     }
 
     /// Optimistic local update after our own payment (the wallet may deliver its notification late).

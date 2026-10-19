@@ -50,6 +50,7 @@
 		E229CF82E422BFB00511A07B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8DF72DFF4678C899B3A5FA91 /* Assets.xcassets */; };
 		E255AE68A69BD653FC9CBBB5 /* ios.json in Resources */ = {isa = PBXBuildFile; fileRef = 40BF806F6E215DC5D52DC19A /* ios.json */; };
 		E9BB3C050007C3823BB3AF0B /* Routes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14743D6EE2FF30A71EC05DF8 /* Routes.swift */; };
+		E9FD32EB16A2B1147CE32F52 /* WalletStoreLiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 728E05A4EF1F9754062F107D /* WalletStoreLiveTests.swift */; };
 		EA8B516951A5E53FACB8930D /* SettingsScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */; };
 		F086FC3B91DFF2C1F5275C28 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980CE734EBBC38F6E27FC9AC /* Keychain.swift */; };
 		F97E7B006FA44D8D66751E1E /* ios-payments.json in Resources */ = {isa = PBXBuildFile; fileRef = 56CB7E68F47C54264692248A /* ios-payments.json */; };
@@ -104,6 +105,7 @@
 		6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreens.swift; sourceTree = "<group>"; };
 		6AC38BC0118F08B6790AA946 /* ScanScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanScreen.swift; sourceTree = "<group>"; };
 		724294EA6A6E247298AF6F70 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = es.lproj/ios.json; sourceTree = "<group>"; };
+		728E05A4EF1F9754062F107D /* WalletStoreLiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletStoreLiveTests.swift; sourceTree = "<group>"; };
 		743C2CBC793A15C118B33087 /* WalletFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletFlowTests.swift; sourceTree = "<group>"; };
 		7862821B3D19F09EEE8B8925 /* ReceiveScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiveScreens.swift; sourceTree = "<group>"; };
 		7BEB516EC2D5B6B041D2DB63 /* treasure-chest.lottie */ = {isa = PBXFileReference; path = "treasure-chest.lottie"; sourceTree = "<group>"; };
@@ -360,6 +362,7 @@
 			isa = PBXGroup;
 			children = (
 				26CB68A3A09988B3CC2BEF93 /* L10nTests.swift */,
+				728E05A4EF1F9754062F107D /* WalletStoreLiveTests.swift */,
 			);
 			path = LaWalletTests;
 			sourceTree = "<group>";
@@ -517,6 +520,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				045798B4738D236D8F414D05 /* L10nTests.swift in Sources */,
+				E9FD32EB16A2B1147CE32F52 /* WalletStoreLiveTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
