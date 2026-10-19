@@ -194,7 +194,8 @@ extension NavRow where Trailing == EmptyView {
 
 // MARK: nav tabbar
 //
-// A glass capsule with Home/Settings and a brand-tinted scan lens that melts into it (GlassEffectContainer).
+// A glass capsule with Home/Settings and a brand-tinted scan button floating above it. The two are deliberately NOT in
+// one GlassEffectContainer: there the shapes blend and the button reads as part of (behind) the bar.
 
 struct NavTabbar: View {
     enum Tab { case home, settings }
@@ -205,30 +206,30 @@ struct NavTabbar: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        GlassGroup(spacing: 0) {
-            ZStack {
-                HStack(spacing: 0) {
-                    side("home", .home, onHome, label: t("shared.nav.home"))
-                    Spacer(minLength: 96)
-                    side("settings", .settings, onSettings, label: t("shared.nav.settings"))
-                }
-                .padding(.horizontal, 14)
-                .frame(width: 292, height: 66)
-                .lwGlass(in: Capsule())
-
-                // The scan lens overlaps the bar; inside the glass container the two melt together.
-                Button(action: onScan) {
-                    Icon("scan-qr-code", size: 32).foregroundStyle(.white).frame(width: 82, height: 82).contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .lwGlass(in: Circle(), tint: .color(theme.preset.t400.opacity(0.92)), interactive: true)
-                .shadow(color: theme.preset.primary.opacity(0.40), radius: 22, y: 8)
-                .offset(y: -10)
-                .accessibilityLabel(t("shared.nav.scan"))
-                .accessibilityIdentifier("nav.scan")
+        ZStack {
+            HStack(spacing: 0) {
+                side("home", .home, onHome, label: t("shared.nav.home"))
+                Spacer(minLength: 104)
+                side("settings", .settings, onSettings, label: t("shared.nav.settings"))
             }
+            .padding(.horizontal, 14)
+            .frame(width: 292, height: 66)
+            .lwGlass(in: Capsule())
+
+            Button(action: onScan) {
+                Icon("scan-qr-code", size: 32).foregroundStyle(.white).frame(width: 80, height: 80).contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .lwGlass(in: Circle(), tint: .color(theme.preset.t400.opacity(0.95)), interactive: true)
+            .overlay(Circle().strokeBorder(Color.white.opacity(0.22), lineWidth: 1))
+            .shadow(color: .black.opacity(0.45), radius: 14, y: 8)
+            .shadow(color: theme.preset.primary.opacity(0.35), radius: 24, y: 6)
+            .offset(y: -20)
+            .zIndex(1)
+            .accessibilityLabel(t("shared.nav.scan"))
+            .accessibilityIdentifier("nav.scan")
         }
-        .padding(.top, 34).padding(.bottom, 4)
+        .padding(.top, 40).padding(.bottom, 4)
         .frame(maxWidth: .infinity)
         .background(alignment: .bottom) {
             // Scrim so rows scrolling underneath don't compete with the bar.
