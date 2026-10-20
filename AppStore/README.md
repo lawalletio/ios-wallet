@@ -4,20 +4,20 @@ Everything needed to ship LaWallet to TestFlight and the App Store. The listing 
 way `fastlane deliver` expects (`metadata/<locale>/name.txt`, …), so it can be pasted into App Store Connect or uploaded
 as is.
 
-## One-time setup
+## One-time setup (done 2026-10-20)
 
-1. **Team.** Create `Config/Local.xcconfig` (gitignored) with `DEVELOPMENT_TEAM = <your Team ID>`. The enrolled account
-   must be an **organization**: App Review only accepts wallets from organizations (guideline 3.1.5(b)).
-2. **App ID** `io.lawallet.wallet` with these capabilities: Associated Domains, NFC Tag Reading. Automatic signing
-   creates it on the first archive (`-allowProvisioningUpdates`).
-3. **App Store Connect record.** Name *LaWallet*, primary language English (U.S.), bundle ID `io.lawallet.wallet`,
-   SKU `lawallet-ios`. Category **Finance** (secondary: Utilities).
-4. **Server side, on every instance the reviewer might hit (at least beta.lawallet.io):**
-   - `APPLE_APP_IDS=<TEAMID>.io.lawallet.wallet` set, so `/.well-known/apple-app-site-association` serves the app.
-     Passkeys and universal links depend on it (lawallet-nwc PR #365).
-   - `DELETE /api/account` deployed. The in-app **Delete account** button (Settings → Security) needs it, and Apple
-     requires account deletion (guideline 5.1.1(v)). Until it ships, the button explains that the instance can't
-     delete accounts yet, which App Review will reject.
+- **App record:** "LaWallet: Lightning Wallet" (Apple ID 6824778831, SKU `lawallet-ios`, bundle `io.lawallet.wallet`) on
+  team JL86VWP8H7. "LaWallet" was already taken on the App Store; the home-screen name is still LaWallet.
+- **Signing:** Release signs manually with *Apple Distribution* and the **LaWallet App Store** profile (created through
+  the API; the team has no registered devices, so automatic signing can't make the development profile it wants first).
+  The Team ID goes in the gitignored `Config/Local.xcconfig`.
+- **API key:** App Manager key "GitHub Actions iOS release". Export `ASC_KEY_PATH`, `ASC_KEY_ID`, `ASC_ISSUER_ID`. The
+  issuer ID is under Users and Access → Integrations.
+- **Server:** beta.lawallet.io serves the AASA with `APPLE_APP_IDS=JL86VWP8H7.io.lawallet.wallet`, which passkeys and
+  activation links need. `DELETE /api/account` must be live there before submitting (guideline 5.1.1(v)).
+- **Organization account:** wallets must come from an organization (guideline 3.1.5(b)). The plan is to convert this
+  individual membership to La Crypta: get La Crypta's D-U-N-S number, then ask Apple Developer Support to migrate the
+  membership. That keeps the team ID, the app and the certificates.
 
 ## Every release
 
@@ -27,7 +27,12 @@ xcodebuild test -project LaWallet.xcodeproj -scheme LaWallet \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -skipPackagePluginValidation -skipMacroValidation
 scripts/screenshots.sh           # only when the UI changed → AppStore/screenshots/{en,es}/ (gitignored)
 scripts/archive.sh --upload      # Release archive → App Store Connect (build number = commit count)
+REVIEW_FIRST_NAME=… REVIEW_LAST_NAME=… REVIEW_EMAIL=… REVIEW_PHONE=+… \
+  scripts/appstore-metadata.py --build <n> [--screenshots]   # listing, age rating, categories, review info, build
 ```
+
+`appstore-metadata.py` needs `pip install pyjwt cryptography requests`. Three things stay manual in App Store Connect:
+the App Privacy answers (publishing them is an attestation), pricing changes, and **Submit for Review**.
 
 Bump `MARKETING_VERSION` in `project.yml` for each user-facing version. The build number comes from the commit count,
 so it never needs a manual bump.
