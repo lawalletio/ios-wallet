@@ -61,9 +61,10 @@ device.
 
 ## Review risks
 
-- **Paid Lightning addresses (3.1.1).** On instances that charge for usernames, the claim screen asks for a Lightning
-  payment to unlock one. That can read as buying a digital good without In-App Purchase. beta.lawallet.io offers free
-  usernames, so the reviewer won't see it there. If App Review raises it, hide the paid path on iOS.
+- **Paid Lightning addresses (3.1.1).** Paying sats to unlock a username can read as buying a digital good without In-App
+  Purchase. **Paid Registration is OFF on beta.lawallet.io** (Admin → Settings → Wallet, turned off 2026-10-20) so the
+  reviewer only sees free usernames. Keep it off while a build is in review. Other instances that charge still show the
+  paid flow in the app.
 - **Demo account.** Put a funded nsec in App Store Connect → App Review Information, never in this repo. Review notes:
   `metadata/review_information/notes.txt`.
 - **NFC.** The reviewer has no Bolt Card. The notes explain that the card features need one, and every other flow
