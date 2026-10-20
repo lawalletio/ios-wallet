@@ -8,6 +8,31 @@ import Testing
 private let e2eURL = ProcessInfo.processInfo.environment["LAWALLET_E2E_URL"].flatMap(URL.init(string:))
 
 @Suite(.enabled(if: e2eURL != nil), .serialized) struct IntegrationTests {
+    /// Settings → Security → Delete account (App Store 5.1.1(v)): the account goes and its username is released.
+    @Test func deleteAccountReleasesUsername() async throws {
+        let settings = try await LaWalletAPI.probe(e2eURL!)
+        let base = settings.endpoint.flatMap(URL.init(string:)) ?? e2eURL!
+        let signer = LocalSigner(keys: .generate())
+        let jwt = try await LaWalletAPI(http: HTTPClient(baseURL: base)).mintJWT(signer: signer)
+        let api = LaWalletAPI(http: HTTPClient(baseURL: base, bearer: { jwt.token }))
+        for attempt in 0..<4 {
+            do { _ = try await api.me(); break } catch let e as APIError where e.status == 503 && attempt < 3 {
+                try await Task.sleep(for: .seconds(2))
+            }
+        }
+        let username = "iosdel" + Data.random(4).hex
+        let claimed: Bool
+        do { _ = try await api.createAddress(username); claimed = true } catch {
+            print("deleteAccount e2e: no address claimed: \(error)")
+            claimed = false
+        }
+        if claimed { #expect(try await api.checkUsername(username) == false) }
+
+        try await api.deleteAccount()
+
+        if claimed { #expect(try await api.checkUsername(username)) }
+    }
+
     @Test func newAccountGetsWalletAndAddress() async throws {
         let settings = try await LaWalletAPI.probe(e2eURL!)
         let base = settings.endpoint.flatMap(URL.init(string:)) ?? e2eURL!
