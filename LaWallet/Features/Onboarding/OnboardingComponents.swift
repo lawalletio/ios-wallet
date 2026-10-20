@@ -106,7 +106,6 @@ struct OnbSecretKeyReveal: View {
     var idPrefix = "create"
     @Environment(AppModel.self) private var app
     @State private var revealed = false
-    @State private var copied = false
 
     var body: some View {
         // One glass surface: the key sits in a recessed well, copy is a frosted chip, the backup confirm is a hairline row.
@@ -129,7 +128,8 @@ struct OnbSecretKeyReveal: View {
                 .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 10)
                 .lwInset()
 
-                Button(action: copy) {
+                // A fresh secret key: local-only, auto-expiring (never synced to other devices via Universal Clipboard).
+                CopyButton(value: nsec, secret: true, onCopy: { app.show(.success, t("auth.keyCopied")) }) { copied in
                     OnbIconText(icon: copied ? "check" : "copy", text: copied ? t("common.copied") : t("auth.copyKey"))
                         .font(LW.font(15, .semibold)).foregroundStyle(LW.foreground)
                         .frame(maxWidth: .infinity, minHeight: 44)
@@ -163,17 +163,6 @@ struct OnbSecretKeyReveal: View {
         }
         .lwSurface(LW.Radius.surface - 4)
     }
-
-    private func copy() {
-        UIPasteboard.general.string = nsec
-        copied = true
-        Haptics.tap()
-        app.show(.success, t("auth.keyCopied"))
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            copied = false
-        }
-    }
 }
 
 struct OnbCheckbox: View {
@@ -206,7 +195,7 @@ struct OnbPasskeyButton: View {
     @State private var error: String?
 
     var body: some View {
-        if PasskeyService.isSupported {
+        if PasskeyService.isSupported(app) {
             VStack(spacing: 8) {
                 Button(action: run) {
                     OnbIconText(icon: "fingerprint", text: busy ? t("auth.waitingForDevice") : buttonLabel, busy: busy)

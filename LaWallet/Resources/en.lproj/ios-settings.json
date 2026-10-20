@@ -46,5 +46,13 @@
  "ios.set.wallets.deleteTitle": "Delete {name}?",
  "ios.set.wallets.deleteBody": "Addresses and cards using this wallet stop routing payments through it. This can't be undone.",
  "ios.set.wallets.deleted": "{name} deleted",
- "ios.set.wallets.created": "Created {date}"
+ "ios.set.wallets.created": "Created {date}",
+ "ios.security.deleteTitle": "Delete account",
+ "ios.security.deleteAccount": "Delete account",
+ "ios.security.deleting": "Deleting…",
+ "ios.security.deleteHint": "Removes your account, Lightning addresses, cards and remote wallets from this community, then signs you out.",
+ "ios.security.deleteConfirm": "This permanently deletes your account on {host}, including your Lightning addresses, cards and remote wallets. It can't be undone. Back up your secret key first if you want to keep your Nostr identity.",
+ "ios.security.deleted": "Account deleted",
+ "ios.security.deleteUnsupported": "{host} can't delete accounts yet. Contact the community that runs it.",
+ "ios.security.deleteFailed": "Couldn't delete the account: {error}"
 }

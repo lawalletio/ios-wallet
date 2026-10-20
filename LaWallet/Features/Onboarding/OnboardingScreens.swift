@@ -62,7 +62,8 @@ struct LandingScreen: View {
 /// `/wallet/signup` — onboarding/signup-choice.tsx.
 struct SignupChoiceScreen: View {
     @Environment(\.authPath) private var path
-    private let passkey = PasskeyService.isSupported
+    @Environment(AppModel.self) private var app
+    private var passkey: Bool { PasskeyService.isSupported(app) }
 
     var body: some View {
         OnbPage {
@@ -190,6 +191,7 @@ struct CreatePasskeyScreen: View {
 /// `/wallet/login` — onboarding/login-options.tsx: passkey or Nostr.
 struct LoginScreen: View {
     @Environment(\.authPath) private var path
+    @Environment(AppModel.self) private var app
 
     var body: some View {
         OnbPage {
@@ -198,12 +200,14 @@ struct LoginScreen: View {
                     OnbLogotype().frame(width: 120, height: 28)
                     OnbHeading(title: t("onboarding.login.title"), subtitle: t("onboarding.login.subtitle"), centered: true)
                     VStack(spacing: 20) {
-                        OnbPasskeyButton(mode: .authenticate, label: t("onboarding.login.passkey"), showCrossDeviceHint: true,
-                                         surfaceCancel: true, id: "login.passkey")
-                        HStack(spacing: 12) {
-                            Rectangle().fill(Color.white.opacity(0.12)).frame(height: 0.5)
-                            Text(t("onboarding.login.or")).font(LW.font(13, .medium)).foregroundStyle(LW.muted)
-                            Rectangle().fill(Color.white.opacity(0.12)).frame(height: 0.5)
+                        if PasskeyService.isSupported(app) {
+                            OnbPasskeyButton(mode: .authenticate, label: t("onboarding.login.passkey"), showCrossDeviceHint: true,
+                                             surfaceCancel: true, id: "login.passkey")
+                            HStack(spacing: 12) {
+                                Rectangle().fill(Color.white.opacity(0.12)).frame(height: 0.5)
+                                Text(t("onboarding.login.or")).font(LW.font(13, .medium)).foregroundStyle(LW.muted)
+                                Rectangle().fill(Color.white.opacity(0.12)).frame(height: 0.5)
+                            }
                         }
                         Button { path.wrappedValue.append(AuthRoute.loginNostr) } label: {
                             OnbIconText(icon: "key-round", text: t("onboarding.login.continueWithNostr"))

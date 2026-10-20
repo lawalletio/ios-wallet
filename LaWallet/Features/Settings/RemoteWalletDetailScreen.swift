@@ -141,14 +141,7 @@ struct RemoteWalletDetailScreen: View {
                 } else if let txs, txs.isEmpty {
                     emptyText(t("\(f).paymentsEmpty"))
                 } else if let txs {
-                    VStack(spacing: 0) {
-                        ForEach(Array(txs.enumerated()), id: \.element.id) { i, tx in
-                            if i > 0 { RowDivider().padding(.leading, 56) }
-                            Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }.buttonStyle(PressScale())
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .lwSurface()
+                    TransactionList(items: txs)
                 } else {
                     ProgressView().tint(LW.muted).frame(maxWidth: .infinity, minHeight: 96).lwSurface()
                 }
@@ -512,10 +505,7 @@ private struct ForwardingConfigSheet: View {
                 HStack(spacing: 12) {
                     Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.secondary))
                     Button { Task { await save() } } label: {
-                        HStack(spacing: 8) {
-                            if saving { ProgressView().tint(LW.foreground) }
-                            Text(t(action.enabled ? "\(f).saveChanges" : "\(f).saveAndEnable"))
-                        }
+                        BusyLabel(t(action.enabled ? "\(f).saveChanges" : "\(f).saveAndEnable"), busy: saving)
                     }
                     .buttonStyle(.lw(.theme))
                     .disabled(!valid || saving)
@@ -794,10 +784,7 @@ private struct CreateNotificationSheet: View {
                 HStack(spacing: 12) {
                     Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.secondary))
                     Button { Task { await create() } } label: {
-                        HStack(spacing: 8) {
-                            if saving { ProgressView().tint(LW.foreground) }
-                            Text(t("\(n).create"))
-                        }
+                        BusyLabel(t("\(n).create"), busy: saving)
                     }
                     .buttonStyle(.lw(.theme))
                     .disabled(saving)

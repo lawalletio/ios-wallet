@@ -1,0 +1,5 @@
+// Shared by Debug and Release. The Apple Developer Team ID stays out of the public repo:
+// create Config/Local.xcconfig (gitignored) containing `DEVELOPMENT_TEAM = ABCDE12345`.
+// CI / scripts/archive.sh can pass DEVELOPMENT_TEAM=... on the xcodebuild command line instead.
+DEVELOPMENT_TEAM =
+#include? "Local.xcconfig"

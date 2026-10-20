@@ -104,18 +104,32 @@ final class ContactsStore: @unchecked Sendable {
     private let key = "lawallet-contacts"
     struct Contact: Codable, Hashable { let address: String; var name: String?; var avatar: String?; var lastUsed: Date }
 
+    private let lock = NSLock()
+    private var cached: [Contact]?
+
+    /// Decoded once; read on every keypad tap and preview render.
     var contacts: [Contact] {
-        (UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode([Contact].self, from: $0) } ?? [])
-            .sorted { $0.lastUsed > $1.lastUsed }
+        lock.withLock {
+            if let cached { return cached }
+            let list = (UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode([Contact].self, from: $0) } ?? [])
+                .sorted { $0.lastUsed > $1.lastUsed }
+            cached = list
+            return list
+        }
     }
 
     func remember(_ address: String, name: String? = nil, avatar: String? = nil) {
         var list = contacts.filter { $0.address.lowercased() != address.lowercased() }
         list.insert(Contact(address: address, name: name, avatar: avatar, lastUsed: Date()), at: 0)
-        if let data = try? JSONEncoder().encode(Array(list.prefix(20))) { UserDefaults.standard.set(data, forKey: key) }
+        list = Array(list.prefix(20))
+        lock.withLock { cached = list }
+        if let data = try? JSONEncoder().encode(list) { UserDefaults.standard.set(data, forKey: key) }
     }
 
-    func clear() { UserDefaults.standard.removeObject(forKey: key) }
+    func clear() {
+        lock.withLock { cached = nil }
+        UserDefaults.standard.removeObject(forKey: key)
+    }
 }
 
 /// Fixed suggestion domains (`lightning-address-suggestions.ts`).

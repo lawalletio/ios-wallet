@@ -1,76 +1,7 @@
 import XCTest
 
-/// End-to-end UI flows against a live LaWallet instance (default: local `pnpm start:dev-server` on :3774 whose
-/// `lncurl_server_url` points at the Alby NWC faucet, so every signup gets a funded test wallet).
-/// Override with `LAWALLET_UITEST_INSTANCE` (e.g. https://beta.lawallet.io).
-final class WalletFlowTests: XCTestCase {
-    private var instance: String { ProcessInfo.processInfo.environment["LAWALLET_UITEST_INSTANCE"] ?? "http://localhost:3774" }
-
-    override func setUp() { continueAfterFailure = false }
-
-    private func launch() -> XCUIApplication {
-        let app = XCUIApplication()
-        app.launchArguments = ["-uitest-reset", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
-        app.launchEnvironment["LAWALLET_INSTANCE"] = instance
-        app.launch()
-        return app
-    }
-
-    private func el(_ app: XCUIApplication, _ id: String) -> XCUIElement { app.descendants(matching: .any)[id].firstMatch }
-
-    @discardableResult
-    private func tap(_ app: XCUIApplication, _ id: String, timeout: TimeInterval = 15) -> XCUIElement {
-        let e = el(app, id)
-        XCTAssertTrue(e.waitForExistence(timeout: timeout), "missing \(id)")
-        e.tap()
-        return e
-    }
-
-    private func wait(_ e: XCUIElement, timeout: TimeInterval = 30, _ predicate: String = "exists == true") {
-        let exp = expectation(for: NSPredicate(format: predicate), evaluatedWith: e)
-        wait(for: [exp], timeout: timeout)
-    }
-
-    /// Landing → random key → backup → welcome → home.
-    private func createAccount(_ app: XCUIApplication) {
-        tap(app, "landing.create", timeout: 30)
-        tap(app, "signup.randomKey")
-        tap(app, "create.backedUp")
-        tap(app, "create.continue")
-        allowSystemAlert()
-        tap(app, "welcome.enter", timeout: 40)
-        XCTAssertTrue(el(app, "home.receive").waitForExistence(timeout: 20))
-    }
-
-    /// Dismisses the notification permission prompt raised after signup.
-    private func allowSystemAlert() {
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let allow = springboard.buttons["Allow"]
-        if allow.waitForExistence(timeout: 5) { allow.tap() }
-    }
-
-    /// Taps the non-cancel button of the visible alert.
-    private func confirmAlert(_ app: XCUIApplication) {
-        let alert = app.alerts.firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        let buttons = alert.buttons.allElementsBoundByIndex.filter { $0.label != "Cancel" }
-        XCTAssertFalse(buttons.isEmpty)
-        buttons.last!.tap()
-    }
-
-    private func claimAddress(_ app: XCUIApplication) -> String {
-        let name = "ui" + String(UUID().uuidString.lowercased().filter(\.isHexDigit).prefix(10))
-        tap(app, "home.claimAddress", timeout: 30)
-        let field = tap(app, "claim.username")
-        field.typeText(name)
-        tap(app, "claim.submit", timeout: 20)
-        tap(app, "claim.done", timeout: 40)
-        let address = el(app, "home.address")
-        XCTAssertTrue(address.waitForExistence(timeout: 40))
-        XCTAssertTrue(address.label.contains(name + "@"), "address was \(address.label)")
-        return name
-    }
-
+/// End-to-end UI flows against a live LaWallet instance (see `LaWalletUITestCase`).
+final class WalletFlowTests: LaWalletUITestCase {
     func testCreateAccountClaimAddressAndReceive() throws {
         let app = launch()
         createAccount(app)
@@ -150,6 +81,21 @@ final class WalletFlowTests: XCTestCase {
         tap(app, "settings.removeWallet")
         confirmAlert(app)
         XCTAssertTrue(el(app, "landing.create").waitForExistence(timeout: 15))
+    }
+
+    /// Settings → Security → Delete account. Instances without `DELETE /api/account` explain instead of failing silently.
+    func testDeleteAccount() throws {
+        let app = launch()
+        createAccount(app)
+        tap(app, "nav.settings")
+        tap(app, "settings.security")
+        app.swipeUp()
+        tap(app, "security.deleteAccount")
+        confirmAlert(app)
+        let deleted = el(app, "landing.create")
+        let unsupported = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "can't delete accounts")).firstMatch
+        let exp = expectation(for: NSPredicate { _, _ in deleted.exists || unsupported.exists }, evaluatedWith: nil)
+        wait(for: [exp], timeout: 20)
     }
 
     func testNsecLogin() throws {

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01F651AF86AD1721E3B6417B /* StoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3F9659B25C4DB697C5BC2A /* StoreTests.swift */; };
 		045798B4738D236D8F414D05 /* L10nTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26CB68A3A09988B3CC2BEF93 /* L10nTests.swift */; };
 		064E6EBF910C67572EA7D7C8 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FDF76244BA1CCD537C5E4A5 /* Stores.swift */; };
 		092D3C54E0547A851CA07481 /* PaymentSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A238BA3F4A575F21765DB10 /* PaymentSupport.swift */; };
@@ -18,7 +19,9 @@
 		34034E89BD21480B7AD70EF9 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44EF2FF23EF99FD32A931E8 /* AppModel.swift */; };
 		4B79C31AFDEE7BA339A7D99E /* ClaimUsernameScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2785B6B5CC02877ABAB86BD9 /* ClaimUsernameScreen.swift */; };
 		4C0FE0BADEC8682B925B2853 /* SecurityScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1006EA7AA5F8D4B05A602E51 /* SecurityScreen.swift */; };
+		5E3C60D96A194A1E4293B808 /* PaymentLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BD13818158F21B681F84D9 /* PaymentLogicTests.swift */; };
 		619123C2AC10E41E78CE6E6F /* ClaimCelebration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032A54B0A5685AC5890B69C6 /* ClaimCelebration.swift */; };
+		695EF2493BCF51835829A0C3 /* LogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A289192906E9E242FA2080 /* LogicTests.swift */; };
 		6AEEDA336EEC4F63E7531C7E /* RemoteWalletDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = D922682BAF477334DF32BDAB /* RemoteWalletDetailScreen.swift */; };
 		6D0B356F8F7216CB27F88B4B /* NostrLoginScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF03880EB3C552DFF99F55D /* NostrLoginScreen.swift */; };
 		77B716605751F8B5B6F1A6CC /* ios-onboarding.json in Resources */ = {isa = PBXBuildFile; fileRef = C59173AFCFB2E16B2EFB4C9D /* ios-onboarding.json */; };
@@ -26,11 +29,13 @@
 		7F4ECD69532B78E1AC51D346 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057EC16ADA254681C06ED82F /* OnboardingComponents.swift */; };
 		80E9B5AE9B64F3AA8C5D275C /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC416AF23376F4F1502CAF0A /* L10n.swift */; };
 		8618DFBBD7292FFB8472A188 /* Inter-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 13F6ECD050B6079ECDE7A787 /* Inter-OFL.txt */; };
+		8780F688BC01D2BA912B1B7C /* ScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE58FE36E36B922724677B7 /* ScreenshotTests.swift */; };
 		90739524D50F7455B4A89F6E /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 37E5914C667AC4AD68E2494F /* Lottie */; };
 		95636640AE57528B66969C81 /* ScanScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC38BC0118F08B6790AA946 /* ScanScreen.swift */; };
 		A541C1552FD9FF83D5BAC076 /* ios-settings.json in Resources */ = {isa = PBXBuildFile; fileRef = 0ADA27949A2024FB02BFC1C2 /* ios-settings.json */; };
 		A887DC6F46E9186A76A1DA33 /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0389D1EA0BD8D04DF403EA7 /* Notifier.swift */; };
 		A93659BEEC2F1F103BB5D507 /* PaymentReceipt.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C45E9F0F91A657CC777CF /* PaymentReceipt.swift */; };
+		B1437CA16799FFE6BFF160D5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 37D2D5D846A88220D2D78A79 /* PrivacyInfo.xcprivacy */; };
 		B69D79C2B645B7331AE440DA /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */; };
 		C5730E6ECE5BDAE1AED26DE8 /* SendScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCBEE6A55A09758948A55997 /* SendScreens.swift */; };
 		C7FCFDE80C48269B900A102D /* LaWalletKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4F1B787E6C6983F6A712E64E /* LaWalletKit */; };
@@ -50,10 +55,12 @@
 		DD72D018587302C5893A9830 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE831AEDF258A216918668A /* Theme.swift */; };
 		E229CF82E422BFB00511A07B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8DF72DFF4678C899B3A5FA91 /* Assets.xcassets */; };
 		E255AE68A69BD653FC9CBBB5 /* ios.json in Resources */ = {isa = PBXBuildFile; fileRef = 40BF806F6E215DC5D52DC19A /* ios.json */; };
+		E947B666AAE42AB0286FCA6F /* FormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25EBB2BFDF40A66779BEFDEA /* FormattingTests.swift */; };
 		E9BB3C050007C3823BB3AF0B /* Routes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14743D6EE2FF30A71EC05DF8 /* Routes.swift */; };
 		E9FD32EB16A2B1147CE32F52 /* WalletStoreLiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 728E05A4EF1F9754062F107D /* WalletStoreLiveTests.swift */; };
 		EA8B516951A5E53FACB8930D /* SettingsScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */; };
 		F086FC3B91DFF2C1F5275C28 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980CE734EBBC38F6E27FC9AC /* Keychain.swift */; };
+		F6A9AF420878752E9DE4DC6F /* UITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACCBEB45483729AE3A531BB /* UITestCase.swift */; };
 		F97E7B006FA44D8D66751E1E /* ios-payments.json in Resources */ = {isa = PBXBuildFile; fileRef = 56CB7E68F47C54264692248A /* ios-payments.json */; };
 		FA30B0B7AC693FA145408217 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A60D44684EB97C69BA14D49 /* QRScannerView.swift */; };
 		FE59A2C6C55979DBFF38C468 /* CardsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DC26AF20FDD529590C4F7FF /* CardsScreen.swift */; };
@@ -90,6 +97,8 @@
 		146D2FA3EE1F11BC12C02CD2 /* Inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Inter.ttf; sourceTree = "<group>"; };
 		14743D6EE2FF30A71EC05DF8 /* Routes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Routes.swift; sourceTree = "<group>"; };
 		1A60D44684EB97C69BA14D49 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		207D083941F6C057D4B5F2B1 /* LaWallet.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = LaWallet.xcconfig; sourceTree = "<group>"; };
+		25EBB2BFDF40A66779BEFDEA /* FormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingTests.swift; sourceTree = "<group>"; };
 		26CB68A3A09988B3CC2BEF93 /* L10nTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10nTests.swift; sourceTree = "<group>"; };
 		2785B6B5CC02877ABAB86BD9 /* ClaimUsernameScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimUsernameScreen.swift; sourceTree = "<group>"; };
 		2A238BA3F4A575F21765DB10 /* PaymentSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentSupport.swift; sourceTree = "<group>"; };
@@ -98,13 +107,17 @@
 		2EC04CBB95EF7ED6989A0912 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = es.lproj/wallet.json; sourceTree = "<group>"; };
 		34344100B96DCE4419FF2CB1 /* SettingsScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreens.swift; sourceTree = "<group>"; };
 		36665F057B03ECA2F8AFEE8B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = "es.lproj/ios-settings.json"; sourceTree = "<group>"; };
+		37D2D5D846A88220D2D78A79 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3C3CA35CA59514B735319231 /* PasskeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyService.swift; sourceTree = "<group>"; };
 		434481B9E55AEC337BCD0B48 /* LaWallet.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LaWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		46BD13818158F21B681F84D9 /* PaymentLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentLogicTests.swift; sourceTree = "<group>"; };
 		483A427C8B3F8514F36CFE05 /* ActivityScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityScreens.swift; sourceTree = "<group>"; };
+		4ACCBEB45483729AE3A531BB /* UITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestCase.swift; sourceTree = "<group>"; };
 		4D7810B7741E87D044D22A29 /* NFCReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCReader.swift; sourceTree = "<group>"; };
 		548E6E2675A953E227E5BA89 /* sapeee-el-bananero.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "sapeee-el-bananero.mp3"; sourceTree = "<group>"; };
 		6909ACB6115DB56C2DA60CD6 /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreens.swift; sourceTree = "<group>"; };
 		6AC38BC0118F08B6790AA946 /* ScanScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanScreen.swift; sourceTree = "<group>"; };
+		6C3F9659B25C4DB697C5BC2A /* StoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreTests.swift; sourceTree = "<group>"; };
 		724294EA6A6E247298AF6F70 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = es; path = es.lproj/ios.json; sourceTree = "<group>"; };
 		728E05A4EF1F9754062F107D /* WalletStoreLiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletStoreLiveTests.swift; sourceTree = "<group>"; };
 		743C2CBC793A15C118B33087 /* WalletFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletFlowTests.swift; sourceTree = "<group>"; };
@@ -133,9 +146,11 @@
 		DCBEE6A55A09758948A55997 /* SendScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendScreens.swift; sourceTree = "<group>"; };
 		DE3BFE482968B08A4C178ED0 /* LaWalletKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LaWalletKit; path = Packages/LaWalletKit; sourceTree = SOURCE_ROOT; };
 		E16CE97222621E0EA2872F06 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = en; path = "en.lproj/ios-settings.json"; sourceTree = "<group>"; };
+		E3A289192906E9E242FA2080 /* LogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogicTests.swift; sourceTree = "<group>"; };
 		EC416AF23376F4F1502CAF0A /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		F11C45E9F0F91A657CC777CF /* PaymentReceipt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentReceipt.swift; sourceTree = "<group>"; };
 		F664E78FCC8DEDCA5F68AE11 /* LaWalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaWalletApp.swift; sourceTree = "<group>"; };
+		FCE58FE36E36B922724677B7 /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,6 +185,7 @@
 		0F11EC93339FE2564BCAEAFB = {
 			isa = PBXGroup;
 			children = (
+				16D814CDA7FC0A65C905007F /* Config */,
 				CB9D110AAFC7528BFB78D836 /* LaWallet */,
 				EFFF02686665266A96CE23D0 /* LaWalletTests */,
 				1AEC59A70BA629276A454722 /* LaWalletUITests */,
@@ -178,9 +194,19 @@
 			);
 			sourceTree = "<group>";
 		};
+		16D814CDA7FC0A65C905007F /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				207D083941F6C057D4B5F2B1 /* LaWallet.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		1AEC59A70BA629276A454722 /* LaWalletUITests */ = {
 			isa = PBXGroup;
 			children = (
+				FCE58FE36E36B922724677B7 /* ScreenshotTests.swift */,
+				4ACCBEB45483729AE3A531BB /* UITestCase.swift */,
 				743C2CBC793A15C118B33087 /* WalletFlowTests.swift */,
 			);
 			path = LaWalletUITests;
@@ -259,6 +285,7 @@
 			isa = PBXGroup;
 			children = (
 				8DF72DFF4678C899B3A5FA91 /* Assets.xcassets */,
+				37D2D5D846A88220D2D78A79 /* PrivacyInfo.xcprivacy */,
 				C9770863B7D6F0513EFB2AD7 /* Animations */,
 				AFF43597A4B2C46EC9300A96 /* Fonts */,
 				C59173AFCFB2E16B2EFB4C9D /* ios-onboarding.json */,
@@ -364,7 +391,11 @@
 		EFFF02686665266A96CE23D0 /* LaWalletTests */ = {
 			isa = PBXGroup;
 			children = (
+				25EBB2BFDF40A66779BEFDEA /* FormattingTests.swift */,
 				26CB68A3A09988B3CC2BEF93 /* L10nTests.swift */,
+				E3A289192906E9E242FA2080 /* LogicTests.swift */,
+				46BD13818158F21B681F84D9 /* PaymentLogicTests.swift */,
+				6C3F9659B25C4DB697C5BC2A /* StoreTests.swift */,
 				728E05A4EF1F9754062F107D /* WalletStoreLiveTests.swift */,
 			);
 			path = LaWalletTests;
@@ -505,6 +536,7 @@
 				E229CF82E422BFB00511A07B /* Assets.xcassets in Resources */,
 				8618DFBBD7292FFB8472A188 /* Inter-OFL.txt in Resources */,
 				0CD16125B302698CE5A22B80 /* Inter.ttf in Resources */,
+				B1437CA16799FFE6BFF160D5 /* PrivacyInfo.xcprivacy in Resources */,
 				77B716605751F8B5B6F1A6CC /* ios-onboarding.json in Resources */,
 				F97E7B006FA44D8D66751E1E /* ios-payments.json in Resources */,
 				A541C1552FD9FF83D5BAC076 /* ios-settings.json in Resources */,
@@ -522,7 +554,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E947B666AAE42AB0286FCA6F /* FormattingTests.swift in Sources */,
 				045798B4738D236D8F414D05 /* L10nTests.swift in Sources */,
+				695EF2493BCF51835829A0C3 /* LogicTests.swift in Sources */,
+				5E3C60D96A194A1E4293B808 /* PaymentLogicTests.swift in Sources */,
+				01F651AF86AD1721E3B6417B /* StoreTests.swift in Sources */,
 				E9FD32EB16A2B1147CE32F52 /* WalletStoreLiveTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -573,6 +609,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8780F688BC01D2BA912B1B7C /* ScreenshotTests.swift in Sources */,
+				F6A9AF420878752E9DE4DC6F /* UITestCase.swift in Sources */,
 				C8F56DCE4281CCE018C31913 /* WalletFlowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -695,8 +733,10 @@
 		};
 		5FC34E7129C3542EBCB94C69 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 207D083941F6C057D4B5F2B1 /* LaWallet.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_OPTIMIZATION = space;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -729,8 +769,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -792,6 +832,7 @@
 		};
 		827424A659784A6865E157F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 207D083941F6C057D4B5F2B1 /* LaWallet.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -824,10 +865,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
+				COMPILATION_CACHE_ENABLE_CACHING = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

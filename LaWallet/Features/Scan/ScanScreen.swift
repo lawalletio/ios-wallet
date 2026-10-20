@@ -175,7 +175,8 @@ struct ScanScreen: View {
     private func scanPhoto(_ item: PhotosPickerItem?) async {
         guard let item else { return }
         defer { photo = nil }
-        guard let data = try? await item.loadTransferable(type: Data.self), let text = QRImageDecoder.decode(data) else {
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let text = await Task.detached(priority: .userInitiated, operation: { QRImageDecoder.decode(data) }).value else {
             return app.show(.error, t("ios.pay.noQrInPhoto"))
         }
         await handle(text, force: true)

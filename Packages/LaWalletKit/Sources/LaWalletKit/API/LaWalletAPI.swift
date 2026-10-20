@@ -39,6 +39,12 @@ public struct LaWalletAPI: Sendable {
 
     public func me(signer: any NostrSigner) async throws -> CurrentUser { try await http.get("/api/users/me", auth: .nip98(signer)) }
 
+    /// Permanently deletes the caller's account (addresses, cards, remote wallets). App Store guideline 5.1.1(v).
+    /// Instances that predate the endpoint answer 404/405.
+    public func deleteAccount() async throws {
+        _ = try await http.send("DELETE", "/api/account", json: ["confirm": "DELETE"], as: JSONValue.self)
+    }
+
     public func saveCurrencyPrefs(_ prefs: CurrencyPrefs) async throws {
         struct Body: Encodable { let currencyPrefs: CurrencyPrefs }
         _ = try await http.send("PUT", "/api/users/me/currency-prefs", json: Body(currencyPrefs: prefs), as: JSONValue.self)

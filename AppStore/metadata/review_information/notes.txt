@@ -1,0 +1,17 @@
+LaWallet is a non-custodial Lightning Network (bitcoin) wallet for communities. Funds live in Nostr Wallet Connect (NWC) wallets; the app signs requests with a key that stays on the device. It sells no digital goods or features and contains no in-app purchases.
+
+HOW TO TEST
+1. Launch → "Create account" → "Create a random key" → confirm you backed up the secret key → Continue → Enter.
+2. Claim a Lightning address (any free username). The community server assigns a wallet automatically.
+3. Home shows the balance, Receive shows the address QR and amount invoices, Send pays an address or invoice (swipe to pay).
+Demo account with a funded wallet: Log in → Continue with Nostr → paste the nsec below.
+   nsec: <add in App Store Connect — never commit it>
+
+PERMISSIONS
+• Camera: scanning Lightning invoices, addresses and card activation QR codes (Scan button in the tab bar).
+• NFC: reading Bolt Cards (NTAG 424) to claim sats or pay; requires a physical card.
+• Face ID: passkey sign-in, handled by iOS.
+• Notifications: local notifications when a payment is received. No push server.
+
+ACCOUNT DELETION
+Settings → Security → Delete account.

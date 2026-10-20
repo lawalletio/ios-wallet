@@ -12,6 +12,8 @@ struct WithdrawScreen: View {
     @State private var error: String?
     @State private var snapshot: Int?
     @State private var result: (amountSats: Int, settled: Bool)?
+    /// Owned so leaving the screen stops the settlement watch (it polls the wallet for up to 45 s).
+    @State private var claimTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -31,6 +33,7 @@ struct WithdrawScreen: View {
             params = p
             if value.isEmpty { value = String(p.maxWithdrawableSats) }
         }
+        .onDisappear { claimTask?.cancel() }
     }
 
     private func fixed(_ p: LNURLWithdrawParams) -> Bool { p.minWithdrawableSats == p.maxWithdrawableSats }
@@ -74,7 +77,7 @@ struct WithdrawScreen: View {
             if hasTarget {
                 BottomBar {
                     ErrorText(message: error)
-                    Button { Task { await claim(p) } } label: {
+                    Button { claimTask = Task { await claim(p) } } label: {
                         HStack(spacing: 8) {
                             Icon("arrow-down-to-line", size: 16)
                             Text(amount(p).map { t("withdraw.ctaAmount", ["amount": $0.formatted()]) } ?? t("withdraw.cta"))
@@ -153,11 +156,11 @@ struct WithdrawScreen: View {
     private func waitForSettlement(_ client: NWCClient, _ hash: String) async -> Bool {
         let deadline = Date().addingTimeInterval(45)
         func notified() -> Bool { app.wallet.lastPayment.map { $0.type == .incoming && $0.paymentHash == hash } ?? false }
-        while Date() < deadline {
+        while Date() < deadline, !Task.isCancelled {
             if notified() { return true }
             if let tx = try? await client.lookupInvoice(paymentHash: hash), tx.state == .settled || tx.settledAt != nil { return true }
             for _ in 0..<6 {
-                try? await Task.sleep(for: .milliseconds(500))
+                do { try await Task.sleep(for: .milliseconds(500)) } catch { return false }
                 if notified() { return true }
             }
         }

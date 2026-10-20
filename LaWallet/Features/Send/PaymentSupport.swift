@@ -56,8 +56,11 @@ enum PayAmount {
             guard let rate = rates?[code], rate > 0 else { return nil }
             exact = v / rate * 100_000_000
         }
+        // More than all bitcoin that will ever exist: not a real amount, and `Int(_:)` would trap further up.
+        guard exact.isFinite, exact <= 2_100_000_000_000_000 else { return nil }
+        // Float noise grows with magnitude (1.1 × 1e8 = 110000000.00000001), so the "already whole" tolerance is relative.
         let rounded = exact.rounded()
-        return max(1, abs(exact - rounded) < 1e-9 ? Int(rounded) : Int(exact.rounded(.up)))
+        return max(1, abs(exact - rounded) < max(1e-9, exact * 1e-12) ? Int(rounded) : Int(exact.rounded(.up)))
     }
 
     /// sats → keypad string in `code` (`formatInputFromSats`).
@@ -129,11 +132,7 @@ struct PayAvatar: View {
         ZStack {
             Color.white.opacity(0.08)
             Text(PayAvatar.initials(name)).font(LW.font(max(10, size * 0.3), .medium)).foregroundStyle(LW.muted)
-            if let url {
-                AsyncImage(url: url) { phase in
-                    if let img = phase.image { img.resizable().scaledToFill() }
-                }
-            }
+            if let url { RemoteImage(url: url, placeholder: .clear) }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
@@ -245,20 +244,6 @@ struct PayReceiptActions: View {
 }
 
 /// Spinner + label used inside primary buttons.
-struct PayButtonLabel: View {
-    let busy: Bool
-    let title: String
-    var busyTitle: String?
-    var icon: String?
-    var body: some View {
-        HStack(spacing: 8) {
-            if busy { ProgressView().controlSize(.small) }
-            if !busy || busyTitle != nil { Text(busy ? busyTitle ?? title : title) }
-            if !busy, let icon { Icon(icon, size: 16) }
-        }
-    }
-}
-
 /// Pending marker: a small dot with a soft ring that keeps expanding (waiting-for-payment pills).
 struct PulseDot: View {
     var color: Color = LW.sun

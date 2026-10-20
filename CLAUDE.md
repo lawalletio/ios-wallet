@@ -13,6 +13,12 @@ truth for layout, copy and behavior — when changing a screen, read its web cou
 - Icons are lucide SVGs in `Assets.xcassets/Icons` (`Icon("name")`), generated from the web's `lucide-react`.
 - After adding files run `xcodegen generate`. Build with `-skipPackagePluginValidation`.
 - Swift 6 strict concurrency: UI state is `@Observable @MainActor`; Kit types are `Sendable`/actors.
+- Navigation: `AppModel.path` is a typed `[Route]`. The tab bar is ONE `NavTabbar` over the stack in `AuthenticatedRoot`
+  (`NavTabbar.Tab.visible(for:)`); screens never render their own, they only leave ~150 pt of bottom room for it.
+- Test-only launch hooks (`-uitest-reset`, `LAWALLET_INSTANCE`) are `#if DEBUG`; check `AppModel.isUITest`, never the raw argument.
+- UI tests subclass `LaWalletUITestCase` and wipe app data: run them on iPhone 17 Pro, not the simulator holding a real session.
+- Release / App Store: `scripts/archive.sh`, `scripts/screenshots.sh`, checklist + listing in `AppStore/`. Team ID only in the
+  gitignored `Config/Local.xcconfig`. Keep `Resources/PrivacyInfo.xcprivacy` in sync with any new data the app sends.
 
 ## Design language (Liquid Glass)
 
@@ -20,7 +26,9 @@ truth for layout, copy and behavior — when changing a screen, read its web cou
   Never glass on glass — rows inside a surface are `RowDivider()`-separated. iOS 18–25 falls back to material automatically.
 - Buttons: `.buttonStyle(.lw(...))` only; icon buttons `GlassIconButton`; segments `GlassSegmented`. Glass ignores
   `.opacity`, so disabled state is handled inside `LWButtonStyle` (tint dropped, label dimmed).
-- Background: never paint a screen background — routes add `AmbientBackground` (isotype mint/sun/coral light).
+- Background: never paint a screen background — routes add `AmbientBackground` (isotype mint/sun/coral light). It redraws at
+  8 fps while idle, at display rate only during a payment bloom, and holds still off-screen/backgrounded/Low Power/Reduce Motion.
+  Don't add other always-running `TimelineView`s.
   The only orchestrated motion is the payment bloom + the header pill morphing into the payment notice.
 - Clear-filled shapes under glass are not hit-testable: add `.contentShape(...)` on anything that takes gestures.
 - Labels are sentence case (no tracked ALL CAPS); hero numbers `LW.font(56–68, .semibold).tracking(-2).monospacedDigit()`.

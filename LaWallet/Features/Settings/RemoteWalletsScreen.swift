@@ -256,10 +256,7 @@ struct AddWalletSheet: View {
                 HStack(spacing: 12) {
                     Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.secondary)).disabled(creating)
                     Button { Task { await submit() } } label: {
-                        HStack(spacing: 8) {
-                            if creating { ProgressView().tint(LW.foreground) }
-                            Text(t(method == .lncurl ? "\(w).create" : "\(w).add"))
-                        }
+                        BusyLabel(t(method == .lncurl ? "\(w).create" : "\(w).add"), busy: creating)
                     }
                     .buttonStyle(.lw(.theme))
                     .disabled(!canSubmit)
@@ -496,10 +493,7 @@ struct ProxyWalletSheet: View {
                 HStack(spacing: 12) {
                     Button(t("common.cancel")) { dismiss() }.buttonStyle(.lw(.secondary))
                     Button { Task { await configure() } } label: {
-                        HStack(spacing: 8) {
-                            if busy { ProgressView().tint(LW.foreground) }
-                            Text(t("\(p).enable"))
-                        }
+                        BusyLabel(t("\(p).enable"), busy: busy)
                     }
                     .buttonStyle(.lw(.theme))
                     .disabled(walletId.isEmpty || destination.trimmedValue.isEmpty || busy)

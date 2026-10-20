@@ -106,7 +106,7 @@ struct PaymentReceipt: View {
                         Icon(revealed.contains(label) ? "eye-off" : "eye", size: 15).frame(width: 32, height: 32).contentShape(Circle())
                     }
                     .accessibilityLabel(revealed.contains(label) ? t("shared.receipt.hide", ["label": label]) : t("shared.receipt.show", ["label": label]))
-                    Button { UIPasteboard.general.string = value; Haptics.tap(); app.show(.success, t("common.copied")) } label: {
+                    Button { Clipboard.copy(value); app.show(.success, t("common.copied")) } label: {
                         Icon("copy", size: 15).frame(width: 32, height: 32).contentShape(Circle())
                     }
                     .accessibilityLabel(t("common.copy"))

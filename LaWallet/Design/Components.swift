@@ -1,5 +1,6 @@
 import CoreImage.CIFilterBuiltins
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Lucide icon from the asset catalog (`lucide-<name>`), template-tinted.
 struct Icon: View {
@@ -34,6 +35,7 @@ struct LWButtonStyle: ButtonStyle {
             .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: height)
             .padding(.horizontal, 20)
             .foregroundStyle(foreground)
+            .tint(foreground)  // spinners inside labels match the text on every variant
             .contentShape(shape)
         // Glass ignores `.opacity`, so a disabled button drops its tint and dims its label instead.
         Group {
@@ -157,39 +159,6 @@ struct GroupBox<Content: View>: View {
 
 struct RowDivider: View {
     var body: some View { Rectangle().fill(Color.white.opacity(0.08)).frame(height: 0.5).padding(.leading, 18) }
-}
-
-struct NavRow<Trailing: View>: View {
-    let title: String
-    var icon: String?
-    var subtitle: String?
-    var external = false
-    @ViewBuilder var trailing: () -> Trailing
-
-    var body: some View {
-        HStack(spacing: 14) {
-            if let icon {
-                Icon(icon, size: 17).foregroundStyle(LW.foreground.opacity(0.9))
-                    .frame(width: 32, height: 32).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(LW.font(16, .medium)).foregroundStyle(LW.foreground)
-                if let subtitle { Text(subtitle).font(LW.font(13)).foregroundStyle(LW.muted).lineLimit(1) }
-            }
-            Spacer(minLength: 8)
-            trailing()
-            Icon(external ? "external-link" : "chevron-right", size: 15).foregroundStyle(LW.muted.opacity(0.8))
-        }
-        .padding(.horizontal, 18)
-        .frame(minHeight: 58)
-        .contentShape(Rectangle())
-    }
-}
-
-extension NavRow where Trailing == EmptyView {
-    init(title: String, icon: String? = nil, subtitle: String? = nil, external: Bool = false) {
-        self.init(title: title, icon: icon, subtitle: subtitle, external: external, trailing: { EmptyView() })
-    }
 }
 
 // MARK: nav tabbar
@@ -353,6 +322,26 @@ struct AmountKeypad: View {
 
 // MARK: transaction row (lives inside a glass surface — no glass of its own)
 
+/// Transactions in one surface, hairline-separated; a tap opens the receipt. Lazy, for long histories.
+struct TransactionList: View {
+    let items: [TxItem]
+    var rowID = "tx.row"
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { i, tx in
+                if i > 0 { RowDivider().padding(.leading, 56) }
+                Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }
+                    .buttonStyle(PressScale())
+                    .accessibilityIdentifier(rowID)
+            }
+        }
+        .padding(.vertical, 4)
+        .lwSurface()
+    }
+}
+
 struct TransactionRowView: View {
     let tx: TxItem
     var body: some View {
@@ -394,6 +383,92 @@ enum RelativeTime {
     }
 }
 
+// MARK: Status
+
+/// Button label that swaps in a spinner (and optionally different copy) while work is in flight.
+struct BusyLabel: View {
+    let title: String
+    var busy: Bool
+    var busyTitle: String?
+    var icon: String?
+
+    init(_ title: String, busy: Bool, busyTitle: String? = nil, icon: String? = nil) {
+        self.title = title
+        self.busy = busy
+        self.busyTitle = busyTitle
+        self.icon = icon
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if busy { ProgressView().controlSize(.small) }
+            Text(busy ? busyTitle ?? title : title)
+            if !busy, let icon { Icon(icon, size: 16) }
+        }
+    }
+}
+
+/// Glass capsule for a live status line ("Waiting for payment · 9:59", "Payment detected").
+struct StatusPill<Content: View>: View {
+    var tint: Color?
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        HStack(spacing: 8) { content() }
+            .font(LW.font(13, .medium))
+            .padding(.horizontal, 14).padding(.vertical, 9)
+            .lwGlass(in: Capsule(), tint: tint.map { .color($0.opacity(0.16)) } ?? .none)
+            .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: Copy
+
+/// The one way the app writes to the clipboard. `secret` (keys, connection secrets) keeps the item off Universal
+/// Clipboard and expires it after two minutes.
+enum Clipboard {
+    @MainActor static func copy(_ value: String, secret: Bool = false) {
+        if secret {
+            UIPasteboard.general.setItems([[UTType.plainText.identifier: value]],
+                                          options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(120)])
+        } else {
+            UIPasteboard.general.string = value
+        }
+        Haptics.tap()
+    }
+}
+
+/// Copies `value` and shows `label(true)` (a check) for a moment.
+struct CopyButton<Content: View>: View {
+    let value: String
+    var secret = false
+    var onCopy: () -> Void = {}
+    @ViewBuilder var label: (_ copied: Bool) -> Content
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            Clipboard.copy(value, secret: secret)
+            copied = true
+            onCopy()
+        } label: { label(copied) }
+        .task(id: copied) {
+            guard copied else { return }
+            try? await Task.sleep(for: .seconds(1.6))
+            copied = false
+        }
+    }
+}
+
+/// "Copy" ⇄ "Copied" label with the matching icon.
+struct CopyLabel: View {
+    let copied: Bool
+    var title = t("common.copy")
+    var copiedTitle = t("common.copied")
+    var body: some View {
+        Label { Text(copied ? copiedTitle : title) } icon: { Icon(copied ? "check" : "copy", size: 16) }
+    }
+}
+
 // MARK: QR
 
 struct QRCodeImage: View {
@@ -404,13 +479,20 @@ struct QRCodeImage: View {
         } else { Color.white }
     }
 
+    private static let context = CIContext(options: [.cacheIntermediates: false])
+    private static let cache = NSCache<NSString, UIImage>()
+
+    /// Rendered once per string: views re-evaluate `body` on every state change, and CoreImage work there hitches pushes.
     static func make(_ text: String) -> UIImage? {
+        if let hit = cache.object(forKey: text as NSString) { return hit }
         let f = CIFilter.qrCodeGenerator()
         f.message = Data(text.utf8)
         f.correctionLevel = "M"
         guard let out = f.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)),
-              let cg = CIContext().createCGImage(out, from: out.extent) else { return nil }
-        return UIImage(cgImage: cg)
+              let cg = context.createCGImage(out, from: out.extent) else { return nil }
+        let image = UIImage(cgImage: cg)
+        cache.setObject(image, forKey: text as NSString)
+        return image
     }
 }
 
@@ -419,7 +501,6 @@ struct QRDisplay: View {
     let value: String
     var caption: String?
     var copyValue: String?
-    @State private var copied = false
     var body: some View {
         VStack(spacing: 18) {
             QRCodeImage(text: value)
@@ -436,14 +517,7 @@ struct QRDisplay: View {
             }
             GlassGroup(spacing: 10) {
                 HStack(spacing: 10) {
-                    Button {
-                        UIPasteboard.general.string = copyValue ?? value
-                        copied = true
-                        Haptics.tap()
-                        Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
-                    } label: {
-                        Label { Text(copied ? t("common.copied") : t("common.copy")) } icon: { Icon(copied ? "check" : "copy", size: 16) }
-                    }
+                    CopyButton(value: copyValue ?? value) { CopyLabel(copied: $0) }
                     .buttonStyle(.lw(.secondary, height: 46))
                     .accessibilityIdentifier("qr.copy")
                     ShareLink(item: copyValue ?? value) {
@@ -568,13 +642,45 @@ struct ToastView: View {
     }
 }
 
-/// Remote image with a neutral placeholder (card designs, avatars, community logos).
+/// Remote image with a neutral placeholder (card designs, avatars, community logos). Decoded off the main thread and
+/// kept in memory, so a view that remounts (the home logo after a payment notice, list rows) never refetches or flashes.
 struct RemoteImage: View {
     let url: URL?
     var contentMode: ContentMode = .fill
+    var placeholder: Color = LW.card
+    @State private var image: UIImage?
+
+    init(url: URL?, contentMode: ContentMode = .fill, placeholder: Color = LW.card) {
+        self.url = url
+        self.contentMode = contentMode
+        self.placeholder = placeholder
+        _image = State(initialValue: url.flatMap(ImageCache.cached))
+    }
+
     var body: some View {
-        AsyncImage(url: url) { phase in
-            if let img = phase.image { img.resizable().aspectRatio(contentMode: contentMode) } else { LW.card }
+        ZStack {
+            if let image { Image(uiImage: image).resizable().aspectRatio(contentMode: contentMode) } else { placeholder }
         }
+        .task(id: url) { if image == nil { image = await ImageCache.load(url) } }
+    }
+}
+
+enum ImageCache {
+    /// NSCache is internally synchronized; loads finish on arbitrary executors.
+    nonisolated(unsafe) private static let memory: NSCache<NSURL, UIImage> = {
+        let c = NSCache<NSURL, UIImage>()
+        c.totalCostLimit = 48 << 20
+        return c
+    }()
+
+    static func cached(_ url: URL) -> UIImage? { memory.object(forKey: url as NSURL) }
+
+    static func load(_ url: URL?) async -> UIImage? {
+        guard let url else { return nil }
+        if let hit = cached(url) { return hit }
+        guard let (data, _) = try? await URLSession.shared.data(from: url),
+              let image = await UIImage(data: data)?.byPreparingForDisplay() else { return nil }
+        memory.setObject(image, forKey: url as NSURL, cost: data.count)
+        return image
     }
 }

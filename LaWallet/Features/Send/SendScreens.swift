@@ -41,7 +41,7 @@ struct SendRecipientScreen: View {
 
             BottomBar {
                 Button { Task { await submit(value) } } label: {
-                    PayButtonLabel(busy: loading, title: t("common.continue"), icon: "arrow-right")
+                    BusyLabel(t("common.continue"), busy: loading, icon: "arrow-right")
                 }
                 .buttonStyle(.lw(.primary))
                 .disabled(query.isEmpty || loading)
@@ -362,7 +362,7 @@ struct SendAmountScreen: View {
                 if showNote { noteField(max: commentAllowed) }
                 ErrorText(message: outOfRange)
                 Button { next(sats: sats, showNote: showNote, commentAllowed: commentAllowed) } label: {
-                    PayButtonLabel(busy: false, title: t("common.continue"), icon: "arrow-right")
+                    BusyLabel(t("common.continue"), busy: false, icon: "arrow-right")
                 }
                 .buttonStyle(.lw(.primary))
                 .disabled(sats == nil || outOfRange != nil)

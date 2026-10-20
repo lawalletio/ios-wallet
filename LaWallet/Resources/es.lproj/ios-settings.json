@@ -46,5 +46,13 @@
  "ios.set.wallets.deleteTitle": "¿Eliminar {name}?",
  "ios.set.wallets.deleteBody": "Las direcciones y tarjetas que usan esta billetera dejarán de recibir pagos por ella. No se puede deshacer.",
  "ios.set.wallets.deleted": "{name} eliminada",
- "ios.set.wallets.created": "Creada {date}"
+ "ios.set.wallets.created": "Creada {date}",
+ "ios.security.deleteTitle": "Eliminar cuenta",
+ "ios.security.deleteAccount": "Eliminar cuenta",
+ "ios.security.deleting": "Eliminando…",
+ "ios.security.deleteHint": "Borra tu cuenta, direcciones Lightning, tarjetas y billeteras remotas de esta comunidad, y cierra tu sesión.",
+ "ios.security.deleteConfirm": "Esto elimina para siempre tu cuenta en {host}, incluidas tus direcciones Lightning, tarjetas y billeteras remotas. No se puede deshacer. Si querés conservar tu identidad Nostr, respaldá tu clave secreta antes.",
+ "ios.security.deleted": "Cuenta eliminada",
+ "ios.security.deleteUnsupported": "{host} todavía no permite eliminar cuentas. Contactá a la comunidad que lo administra.",
+ "ios.security.deleteFailed": "No se pudo eliminar la cuenta: {error}"
 }

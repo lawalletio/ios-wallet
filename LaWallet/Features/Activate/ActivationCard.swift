@@ -9,11 +9,14 @@ struct ActivationCard: View {
     var glow = true
     @Environment(\.theme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var onScreen = false
 
     private static let size = CGSize(width: 300, height: 189)
 
+    // Motion periods are 4–7 s, so 30 fps reads as smooth. Glow and shadow are gradients, not `.blur`/`.shadow`
+    // filters, which would re-rasterize on every frame of a moving layer.
     var body: some View {
-        TimelineView(.animation(paused: reduceMotion)) { ctx in
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion || !onScreen)) { ctx in
             let s = ctx.date.timeIntervalSinceReferenceDate
             let sway = reduceMotion ? 0 : sin(s * 2 * .pi / 7)              // card-sway 7s
             let bob = reduceMotion ? 0 : (1 - cos(s * 2 * .pi / 5.5)) / 2   // card-bob 5.5s
@@ -22,19 +25,29 @@ struct ActivationCard: View {
             ZStack {
                 if glow {
                     Circle()
-                        .fill(RadialGradient(colors: [theme.preset.primary.opacity(0.5), theme.preset.primary.opacity(0.2), .clear],
-                                             center: .center, startRadius: 0, endRadius: 128))
-                        .frame(width: 256, height: 256).blur(radius: 40)
+                        .fill(RadialGradient(stops: [.init(color: theme.preset.primary.opacity(0.45), location: 0),
+                                                     .init(color: theme.preset.primary.opacity(0.18), location: 0.45),
+                                                     .init(color: .clear, location: 1)],
+                                             center: .center, startRadius: 0, endRadius: 168))
+                        .frame(width: 336, height: 336)
                         .opacity(0.3 + 0.35 * pulse).scaleEffect(1 + 0.12 * pulse)
                 }
+                // Contact shadow on the "floor": tightens as the card rises.
+                Ellipse()
+                    .fill(RadialGradient(colors: [.black.opacity(0.55), .clear], center: .center, startRadius: 0, endRadius: 150))
+                    .frame(width: 300, height: 56)
+                    .scaleEffect(1 - 0.08 * bob)
+                    .opacity(0.9 - 0.25 * bob)
+                    .offset(y: Self.size.height / 2 + 14)
                 face(sheen: reduceMotion ? nil : sheen)
                     .scaleEffect(x: 1 - 0.05 * abs(sway), y: 1)
                     .rotationEffect(.degrees(2.5 * sway))
                     .offset(y: -14 * bob)
-                    .shadow(color: .black.opacity(0.45), radius: 30, y: 22 - 6 * bob)
             }
         }
         .frame(width: Self.size.width + 40, height: Self.size.height + 60)
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title ?? t("activate.cardAlt"))
         .accessibilityIdentifier("activate.card")
@@ -91,6 +104,7 @@ struct ActivationSuccessView: View {
     @Environment(\.theme) private var theme
     @State private var popped = false
     @State private var checked = false
+    @State private var ringsDone = false
     @State private var shown = false
 
     var body: some View {
@@ -141,11 +155,18 @@ struct ActivationSuccessView: View {
 
     private var badge: some View {
         ZStack {
-            TimelineView(.animation) { ctx in
-                let s = ctx.date.timeIntervalSinceReferenceDate
-                ZStack {
-                    ring(phase: s.truncatingRemainder(dividingBy: 1.6) / 1.6)
-                    ring(phase: (s + 1.0).truncatingRemainder(dividingBy: 1.6) / 1.6)
+            // Three pulses, then still (a forever-running ring timeline would keep the GPU busy on a static screen).
+            if !ringsDone {
+                TimelineView(.animation) { ctx in
+                    let s = ctx.date.timeIntervalSinceReferenceDate
+                    ZStack {
+                        ring(phase: s.truncatingRemainder(dividingBy: 1.6) / 1.6)
+                        ring(phase: (s + 1.0).truncatingRemainder(dividingBy: 1.6) / 1.6)
+                    }
+                }
+                .task {
+                    try? await Task.sleep(for: .seconds(4.8))
+                    withAnimation(.easeOut(duration: 0.4)) { ringsDone = true }
                 }
             }
             // Brand-tinted glass lens (same mark as `PaymentReceipt`), the drawn check on top.

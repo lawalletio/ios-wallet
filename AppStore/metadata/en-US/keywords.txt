@@ -1,0 +1,1 @@
+lightning,bitcoin,sats,nostr,nwc,wallet connect,lnurl,bolt card,zap,lightning address,community

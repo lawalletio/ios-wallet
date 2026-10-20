@@ -243,7 +243,7 @@ private struct InlineActivationAuth: View {
 
     private var choose: some View {
         VStack(spacing: 14) {
-            Text(t(PasskeyService.isSupported ? "activate.inlineAuth.intro" : "activate.inlineAuth.introNoPasskey"))
+            Text(t(PasskeyService.isSupported(app) ? "activate.inlineAuth.intro" : "activate.inlineAuth.introNoPasskey"))
                 .font(LW.font(15)).foregroundStyle(LW.muted).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 8)
             GlassGroup(spacing: 12) {

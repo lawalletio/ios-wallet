@@ -67,9 +67,10 @@ struct CurrenciesScreen: View {
         }
     }
 
-    /// `List` keeps native drag-to-reorder, so its sections can't be one glass shape; each row gets the glass fallback
-    /// material instead (the list clips the section into a single rounded surface, so there are no seams).
-    private static var rowGlass: some View { Rectangle().fill(.ultraThinMaterial) }
+    /// `List` keeps native drag-to-reorder, so its sections can't be one glass shape; each row gets the surface tint
+    /// instead (the list clips the section into one rounded shape, so there are no seams). A flat fill, not a material:
+    /// a blur per row costs a pass per frame while scrolling ~160 currencies.
+    private static var rowGlass: some View { Rectangle().fill(LW.card) }
 
     private func header(_ text: String) -> some View {
         Text(text).font(LW.font(14, .semibold)).foregroundStyle(LW.muted).textCase(nil).padding(.leading, -12)
@@ -242,10 +243,7 @@ struct InstanceScreen: View {
                 GlassGroup(spacing: 10) {
                     VStack(spacing: 6) {
                         Button { Task { await go(url) } } label: {
-                            HStack(spacing: 8) {
-                                if busy { ProgressView().tint(LW.foreground) }
-                                Text(t("ios.instance.switch"))
-                            }
+                            BusyLabel(t("ios.instance.switch"), busy: busy)
                         }
                         .buttonStyle(.lw(.theme))
                         .disabled(busy || url.trimmedValue.isEmpty)

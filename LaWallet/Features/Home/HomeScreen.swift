@@ -237,15 +237,7 @@ struct HomeScreen: View {
                 } else if items.isEmpty {
                     emptyState(tab == 0 ? "activity" : "git-branch", t(tab == 0 ? "home.list.activity.empty" : "home.list.transfers.empty"))
                 } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(items.enumerated()), id: \.element.id) { i, tx in
-                            Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }
-                                .buttonStyle(PressScale())
-                            if i < items.count - 1 { RowDivider().padding(.leading, 56) }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .lwSurface()
+                    TransactionList(items: Array(items), rowID: "home.tx")
                 }
             }
         }

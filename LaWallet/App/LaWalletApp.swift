@@ -8,7 +8,9 @@ struct LaWalletApp: App {
 
     init() {
         Notifier.registerBackgroundRefresh()
-        if ProcessInfo.processInfo.arguments.contains("-uitest-reset") {
+        #if DEBUG
+        // UI-test hooks; compiled out of Release so a launch argument can never wipe a real wallet.
+        if AppModel.isUITest {
             Keychain.wipe()
             UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier ?? "")
         }
@@ -16,6 +18,7 @@ struct LaWalletApp: App {
             UserDefaults.standard.set(instance, forKey: AppModel.instanceKey)
             UserDefaults.standard.removeObject(forKey: AppModel.settingsCacheKey)
         }
+        #endif
         // Built after the launch overrides above so it reads the right instance.
         _app = State(initialValue: AppModel())
     }
@@ -86,12 +89,7 @@ struct RootView: View {
 
 struct AuthenticatedRoot: View {
     @Environment(AppModel.self) private var app
-
-    /// Home and the settings pages carry the tab bar (web: `<NavTabbar />`); flow screens don't.
-    private var tab: NavTabbar.Tab? {
-        guard let top = app.path.last else { return .home }
-        return top.inSettings ? .settings : nil
-    }
+    private var tab: NavTabbar.Tab? { .visible(for: app.path) }
 
     var body: some View {
         @Bindable var app = app

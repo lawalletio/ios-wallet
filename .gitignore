@@ -1,9 +1,12 @@
-.DS_Store
-build/
-DerivedData/
-.build/
+*.xcresult
 *.xcuserstate
-xcuserdata/
+.DS_Store
+.build/
 .swiftpm/
+AppStore/screenshots/
+Config/Local.xcconfig
+DerivedData/
 Packages/LaWalletKit/.build/
 Packages/LaWalletKit/.swiftpm/
+build/
+xcuserdata/

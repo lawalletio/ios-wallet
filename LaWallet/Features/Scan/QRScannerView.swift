@@ -23,12 +23,18 @@ struct QRScannerView: UIViewControllerRepresentable {
     static func dismantleUIViewController(_ c: QRScannerController, coordinator: ()) { c.stop() }
 
     /// Back wide-angle camera, else any video device (front, external). Nil on the iOS Simulator, which has no camera.
+    /// Looked up once: `body` asks for `hasTorch` on every render and the representable updates on every state change.
     static var device: AVCaptureDevice? {
-        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+        if let resolved { return resolved }
+        let d = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
             ?? AVCaptureDevice.default(for: .video)
             ?? AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera, .external], mediaType: .video,
                                                 position: .unspecified).devices.first
+        resolved = .some(d)
+        return d
     }
+
+    private static var resolved: AVCaptureDevice??
 
     static var hasCamera: Bool { device != nil }
 
@@ -37,9 +43,11 @@ struct QRScannerView: UIViewControllerRepresentable {
 
 /// Decodes the first QR code in a still image (photo library, screenshot). Works without a camera.
 enum QRImageDecoder {
+    /// Photos are downscaled first: high-accuracy detection on a 12 MP image takes seconds. Call off the main thread.
     static func decode(_ data: Data) -> String? {
         guard let image = CIImage(data: data, options: [.applyOrientationProperty: true]) else { return nil }
-        return decode(image)
+        let scale = min(1, 1600 / max(image.extent.width, image.extent.height, 1))
+        return decode(scale < 1 ? image.transformed(by: CGAffineTransform(scaleX: scale, y: scale)) : image)
     }
 
     static func decode(_ image: CIImage) -> String? {
@@ -51,6 +59,7 @@ enum QRImageDecoder {
 final class QRScannerController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var onCode: ((String) -> Void)?
     var paused = false
+    private var torch = false
     private let capture = CaptureSession()
     private var preview: AVCaptureVideoPreviewLayer?
 
@@ -81,6 +90,8 @@ final class QRScannerController: UIViewController, AVCaptureMetadataOutputObject
     func stop() { capture.stop() }
 
     func setTorch(_ on: Bool) {
+        guard on != torch else { return }
+        torch = on
         guard let device = QRScannerView.device, device.hasTorch, (device.torchMode == .on) != on,
               (try? device.lockForConfiguration()) != nil else { return }
         device.torchMode = on ? .on : .off

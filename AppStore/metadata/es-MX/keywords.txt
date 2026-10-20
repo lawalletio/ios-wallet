@@ -1,0 +1,1 @@
+lightning,bitcoin,sats,nostr,nwc,billetera,lnurl,bolt card,zap,direccion lightning,comunidad

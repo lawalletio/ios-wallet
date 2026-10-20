@@ -73,7 +73,7 @@ enum SoundPlayer {
     static func play(_ sound: String) {
         let data: Data?
         switch sound {
-        case "chime": data = chime()
+        case "chime": data = chimeData
         case "bananero": data = Bundle.main.url(forResource: "sapeee-el-bananero", withExtension: "mp3").flatMap { try? Data(contentsOf: $0) }
         default: return
         }
@@ -82,6 +82,8 @@ enum SoundPlayer {
         player = try? AVAudioPlayer(data: data)
         player?.play()
     }
+
+    private static let chimeData = chime()
 
     /// Two-note sine chime (E6 → A6) rendered as a 16-bit WAV.
     static func chime() -> Data {

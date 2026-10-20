@@ -10,6 +10,14 @@ enum LoginMethod: String, Codable, Sendable { case nsec, passkey, bunker }
 final class AppModel {
     static let defaultInstance = URL(string: "https://beta.lawallet.io")!
     static let instanceKey = "lawallet-instance-url"
+    /// Launched by the UI tests (`-uitest-reset`). Always false in Release builds.
+    nonisolated static var isUITest: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-uitest-reset")
+        #else
+        false
+        #endif
+    }
     static let settingsCacheKey = "lawallet-instance-settings"
 
     // Instance
@@ -43,6 +51,7 @@ final class AppModel {
     let currencies = CurrencyStore()
     let flows = FlowState()
     var path: [Route] = []
+    @ObservationIgnored private var prefsSync: Task<Void, Never>?
     var toast: Toast?
     var showWelcome = false
     /// Card activation started while signed out (1 h TTL, like `lawallet:pending-activation`).
@@ -65,9 +74,15 @@ final class AppModel {
         api = LaWalletAPI(http: HTTPClient(baseURL: cached?.endpoint.flatMap(URL.init(string:)) ?? saved))
         rebuildAPI()
         wallet.onPayment = { [weak self] tx in self?.handlePayment(tx) }
+        // Debounced: tapping the balance chip cycles currencies quickly; only the last choice goes to the server.
         currencies.persist = { [weak self] prefs in
             guard let self, self.isAuthenticated else { return }
-            Task { try? await self.api.saveCurrencyPrefs(prefs) }
+            self.prefsSync?.cancel()
+            self.prefsSync = Task {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                try? await self.api.saveCurrencyPrefs(prefs)
+            }
         }
     }
 
@@ -150,7 +165,7 @@ final class AppModel {
     func login(bunker: BunkerSigner) async throws {
         let session = bunker.session
         try await login(signer: bunker, pubkey: session.userPubkey, method: .bunker) {
-            Keychain.set(String(decoding: try! JSONEncoder().encode(session), as: UTF8.self), for: "bunker-session")
+            if let data = try? JSONEncoder().encode(session) { Keychain.set(String(decoding: data, as: UTF8.self), for: "bunker-session") }
         }
     }
 
@@ -167,7 +182,7 @@ final class AppModel {
         persist()
         Keychain.set(method.rawValue, for: "login-method")
         await refreshMe()
-        if !ProcessInfo.processInfo.arguments.contains("-uitest-reset") { Notifier.requestAuthorization() }
+        if !Self.isUITest { Notifier.requestAuthorization() }
     }
 
     func logout() {
@@ -218,11 +233,13 @@ final class AppModel {
     func refreshMe() async {
         do {
             let user = try await api.me()
+            // Re-read before every payment; skip identical writes so observers don't re-render for nothing.
+            guard user != me else { if meError != nil { meError = nil }; return }
             me = user
             meError = nil
             if let prefs = user.currencyPrefs { currencies.hydrate(prefs) }
             wallet.connect(user.nwc)
-            if let r = Self.jwtClaims(jwt ?? "")?["role"]?.string { role = r }
+            if let r = Self.jwtClaims(jwt ?? "")?["role"]?.string, r != role { role = r }
         } catch {
             meError = error.localizedDescription
         }

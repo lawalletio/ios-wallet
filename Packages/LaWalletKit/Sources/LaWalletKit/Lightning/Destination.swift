@@ -9,7 +9,9 @@ public enum Destination: Sendable, Equatable {
 
     public enum ParseError: Error, Equatable { case empty, unsupported, invalidInvoice, invalidLnurl, invalidAddress }
 
-    private static var addressRegex: Regex<(Substring, Substring, Substring)> { /^([a-z0-9._-]+)@([a-z0-9.-]+\.[a-z]{2,})$/.ignoresCase() }
+    /// Built once (parse runs on every keystroke of the recipient field). `Regex` isn't `Sendable`, but its compiled
+    /// program is immutable and lazily initialised atomically, so sharing it is safe.
+    nonisolated(unsafe) private static let addressRegex = /^([a-z0-9._-]+)@([a-z0-9.-]+\.[a-z]{2,})$/.ignoresCase()
 
     public static func parse(_ raw: String) throws -> Destination {
         var input = raw.trimmingCharacters(in: .whitespacesAndNewlines)

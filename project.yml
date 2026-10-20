@@ -5,16 +5,26 @@ options:
     iOS: "18.0"
   createIntermediateGroups: true
   developmentLanguage: en
+# Signing team lives in the gitignored Config/Local.xcconfig (see Config/LaWallet.xcconfig), not in this public spec.
+configFiles:
+  Debug: Config/LaWallet.xcconfig
+  Release: Config/LaWallet.xcconfig
 settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
-    DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     SWIFT_EMIT_LOC_STRINGS: YES
+    DEAD_CODE_STRIPPING: YES
+  configs:
+    Debug:
+      # Xcode 26 compilation cache: clean builds and branch switches reuse compiled modules.
+      COMPILATION_CACHE_ENABLE_CACHING: YES
+    Release:
+      ASSETCATALOG_COMPILER_OPTIMIZATION: space
 packages:
   LaWalletKit:
     path: Packages/LaWalletKit
@@ -41,6 +51,8 @@ targets:
       path: LaWallet/Info.plist
       properties:
         CFBundleDisplayName: LaWallet
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
           UIColorName: LaunchBackground
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]

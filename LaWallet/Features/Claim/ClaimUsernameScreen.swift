@@ -22,7 +22,6 @@ struct ClaimUsernameScreen: View {
     @State private var status: PaymentStatus = .waiting
     @State private var payingWithWallet = false
     @State private var manualChecking = false
-    @State private var copied = false
     @State private var claiming = false
     @State private var claimedAddress: String?
     @State private var pollID = UUID()
@@ -81,7 +80,7 @@ struct ClaimUsernameScreen: View {
             .frame(maxHeight: .infinity, alignment: .top)
             BottomBar {
                 Button { Task { await submit() } } label: {
-                    PayButtonLabel(busy: submitting, title: t("claim.claimAddress"), busyTitle: t("claim.claiming"))
+                    BusyLabel(t("claim.claimAddress"), busy: submitting, busyTitle: t("claim.claiming"))
                 }
                 .buttonStyle(.lw(.theme))
                 .disabled(submitDisabled)
@@ -305,18 +304,14 @@ struct ClaimUsernameScreen: View {
                             VStack(spacing: 10) {
                                 if app.wallet.hasWallet {
                                     Button { Task { await payWithWallet() } } label: {
-                                        PayButtonLabel(busy: payingWithWallet, title: t("claim.payWithWallet"), busyTitle: t("claim.confirmInWallet"), icon: "wallet")
+                                        BusyLabel(t("claim.payWithWallet"), busy: payingWithWallet, busyTitle: t("claim.confirmInWallet"), icon: "wallet")
                                     }
                                     .buttonStyle(.lw(.theme))
                                     .disabled(payingWithWallet || status == .detected)
                                     .accessibilityIdentifier("claim.payWithWallet")
                                 }
-                                Button {
-                                    UIPasteboard.general.string = bolt11
-                                    copied = true
-                                    Task { try? await Task.sleep(for: .seconds(2)); copied = false }
-                                } label: {
-                                    Label { Text(t(copied ? "claim.copied" : "claim.copyInvoice")) } icon: { Icon(copied ? "check" : "copy", size: 16) }
+                                CopyButton(value: bolt11) {
+                                    CopyLabel(copied: $0, title: t("claim.copyInvoice"), copiedTitle: t("claim.copied"))
                                 }
                                 .buttonStyle(.lw(.outline))
                                 .accessibilityIdentifier("claim.copy")
@@ -325,22 +320,17 @@ struct ClaimUsernameScreen: View {
                         VStack(spacing: 6) {
                             switch status {
                             case .waiting:
-                                HStack(spacing: 8) { PulseDot(); Text(t("claim.waitingPayment")) }
-                                    .font(LW.font(13, .medium)).foregroundStyle(LW.foreground.opacity(0.9))
-                                    .padding(.horizontal, 14).padding(.vertical, 9)
-                                    .lwGlass(in: Capsule())
-                                    .accessibilityElement(children: .combine)
+                                StatusPill { PulseDot(); Text(t("claim.waitingPayment")) }
+                                    .foregroundStyle(LW.foreground.opacity(0.9))
                                 Button { Task { await manualCheck() } } label: {
-                                    PayButtonLabel(busy: manualChecking, title: t("claim.checkNow"), busyTitle: t("claim.checking"), icon: "refresh-cw")
+                                    BusyLabel(t("claim.checkNow"), busy: manualChecking, busyTitle: t("claim.checking"), icon: "refresh-cw")
                                 }
                                 .buttonStyle(.lw(.ghost, height: 40, fullWidth: false))
                                 .disabled(manualChecking)
                                 .accessibilityIdentifier("claim.checkNow")
                             case .detected:
-                                HStack(spacing: 6) { Icon("check", size: 14); Text(t("claim.detected")) }
-                                    .font(LW.font(13, .semibold)).foregroundStyle(LW.incoming)
-                                    .padding(.horizontal, 14).padding(.vertical, 9)
-                                    .lwGlass(in: Capsule(), tint: .color(LW.incoming.opacity(0.16)))
+                                StatusPill(tint: LW.incoming) { Icon("check", size: 14); Text(t("claim.detected")).fontWeight(.semibold) }
+                                    .foregroundStyle(LW.incoming)
                             case .expired:
                                 EmptyView()
                             }

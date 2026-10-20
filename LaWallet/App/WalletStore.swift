@@ -1,6 +1,7 @@
 import Foundation
 import LaWalletKit
 import Observation
+import UIKit
 
 /// Display model for a transaction row / receipt.
 struct TxItem: Hashable, Identifiable, Sendable {
@@ -18,10 +19,12 @@ struct TxItem: Hashable, Identifiable, Sendable {
 final class WalletStore {
     enum Status: Equatable { case none, connecting, connected, error(String) }
 
+    // Every write to an observed property re-renders the views reading it — Home stays alive under every pushed
+    // screen — so the polls below only assign when a value actually changed.
     private(set) var status: Status = .none
     /// Counts each payment once and drops stale `get_balance` reads (see `BalanceTracker`).
-    private var tracker = BalanceTracker()
-    var balance: Int? { tracker.value }
+    @ObservationIgnored private var tracker = BalanceTracker() { didSet { if balance != tracker.value { balance = tracker.value } } }
+    private(set) var balance: Int?
     private(set) var balanceIsCached = false
     private(set) var transactions: [TxItem] = []
     private(set) var loadingTransactions = false
@@ -49,7 +52,8 @@ final class WalletStore {
             tracker = BalanceTracker(value: cached)
             balanceIsCached = true
         }
-        if let data = UserDefaults.standard.data(forKey: cacheKey("tx")), let txs = try? JSONDecoder().decode([NWCTransaction].self, from: data) {
+        UserDefaults.standard.removeObject(forKey: cacheKey("tx"))  // pre-1.0 location (backed up to iCloud)
+        if let data = try? Data(contentsOf: txCacheURL), let txs = try? JSONDecoder().decode([NWCTransaction].self, from: data) {
             transactions = txs.map(TxItem.init)
         }
         tasks.append(Task { [weak self] in
@@ -59,6 +63,8 @@ final class WalletStore {
         tasks.append(Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
+                // Suspended or backgrounded: skip; returning to the foreground refreshes immediately (LaWalletApp).
+                guard UIApplication.shared.applicationState == .active else { continue }
                 await self?.refreshBalance()
             }
         })
@@ -86,10 +92,16 @@ final class WalletStore {
         for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("lawallet-wallet-cache") {
             UserDefaults.standard.removeObject(forKey: key)
         }
+        let dir = URL.cachesDirectory
+        for file in (try? FileManager.default.contentsOfDirectory(atPath: dir.path())) ?? [] where file.hasPrefix("lawallet-wallet-cache") {
+            try? FileManager.default.removeItem(at: dir.appending(path: file))
+        }
         Keychain.set(nil, for: "nwc-uri")
     }
 
     private func cacheKey(_ kind: String) -> String { "lawallet-wallet-cache-\(kind)-\((uri ?? "").sha256Hex.prefix(12))" }
+    /// Payment history (incl. preimages) lives in Caches: excluded from backups, protected until first unlock.
+    private var txCacheURL: URL { URL.cachesDirectory.appending(path: cacheKey("tx") + ".json") }
 
     func refreshBalance() async {
         guard let client else { return }
@@ -97,13 +109,14 @@ final class WalletStore {
         do {
             let sats = try await client.getBalanceSats()
             guard client === self.client else { return }
-            status = .connected
+            if status != .connected { status = .connected }
             if tracker.applyRead(sats, ticket: ticket) {
-                balanceIsCached = false
+                if balanceIsCached { balanceIsCached = false }
                 UserDefaults.standard.set(sats, forKey: cacheKey("balance"))
             }
         } catch {
-            if balance == nil || status != .connected { status = .error(Self.message(error)) }
+            let failed = Status.error(Self.message(error))
+            if (balance == nil || status != .connected) && status != failed { status = failed }
         }
     }
 
@@ -116,10 +129,14 @@ final class WalletStore {
             let page = try await client.listTransactions(limit: 20, until: until)
             guard client === self.client else { return }
             let items = page.map(TxItem.init)
-            transactions = reset ? items : transactions + items.filter { i in !transactions.contains { $0.id == i.id } }
-            hasMore = page.count == 20
-            transactionsError = nil
-            if reset, let data = try? JSONEncoder().encode(page) { UserDefaults.standard.set(data, forKey: cacheKey("tx")) }
+            let known = Set(transactions.map(\.id))
+            let merged = reset ? items : transactions + items.filter { !known.contains($0.id) }
+            if merged != transactions { transactions = merged }
+            if hasMore != (page.count == 20) { hasMore = page.count == 20 }
+            if transactionsError != nil { transactionsError = nil }
+            if reset, let data = try? JSONEncoder().encode(page) {
+                try? data.write(to: txCacheURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            }
         } catch {
             transactionsError = Self.message(error)
         }

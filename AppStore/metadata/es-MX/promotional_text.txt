@@ -1,0 +1,1 @@
+La billetera Lightning de tu comunidad: una dirección Lightning, una identidad Nostr y pagos en bitcoin al instante, con tarjetas Bolt Card.

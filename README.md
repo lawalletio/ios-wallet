@@ -60,12 +60,24 @@ UI tests run against `LAWALLET_UITEST_INSTANCE` (default `http://localhost:3774`
 `pnpm start:dev-server` of lawallet-nwc). To make local signups receive a funded test wallet, point the instance's
 LNCurl server at the Alby NWC faucet: setting `lncurl_server_url=https://faucet.nwc.dev?balance=2100`.
 
+## Release
+
+Signing team: `Config/Local.xcconfig` (gitignored) with `DEVELOPMENT_TEAM = <Team ID>`. Then:
+
+```bash
+scripts/archive.sh            # Release archive + App Store .ipa in build/
+scripts/archive.sh --upload   # straight to App Store Connect / TestFlight
+scripts/screenshots.sh        # 6.9" App Store screenshots, en + es
+```
+
+The listing text, the privacy label, review notes and the submission checklist are in [`AppStore/`](AppStore/README.md).
+
 ## Passkeys, NFC and associated domains
 
 Passkeys derive the Nostr key from the WebAuthn PRF extension exactly like the web (`lawallet-nsec-prf-v1`), so the same
 passkey opens the same account on web and iOS. They require:
 
-1. a real Apple Developer Team ID in `project.yml` (`DEVELOPMENT_TEAM`), and
+1. a real Apple Developer Team ID (`Config/Local.xcconfig`), and
 2. the instance to serve `/.well-known/apple-app-site-association` listing `<TEAMID>.io.lawallet.wallet`
    (lawallet-nwc: `APPLE_APP_IDS` env).
 

@@ -114,7 +114,6 @@ private struct BunkerQRMode: View {
     @State private var status = Status.generating
     @State private var uri: String?
     @State private var error: String?
-    @State private var copied = false
     @State private var attempt = 0
 
     var body: some View {
@@ -159,17 +158,13 @@ private struct BunkerQRMode: View {
                                 .buttonStyle(.lw(.secondary, height: 46))
                                 .accessibilityIdentifier("nostr.bunker.open")
                         }
-                        Button {
-                            UIPasteboard.general.string = uri
-                            copied = true
-                            Haptics.tap()
-                            Task { try? await Task.sleep(for: .seconds(2)); copied = false }
-                        } label: {
+                        // The nostrconnect URI carries a session secret.
+                        CopyButton(value: uri, secret: true) { copied in
                             Icon(copied ? "check" : "copy", size: 17).foregroundStyle(LW.foreground).frame(width: 46, height: 46).contentShape(Circle())
+                                .accessibilityLabel(copied ? t("auth.copiedBang") : t("auth.copyUri"))
                         }
                         .buttonStyle(.plain)
                         .lwGlass(in: Circle(), interactive: true)
-                        .accessibilityLabel(copied ? t("auth.copiedBang") : t("auth.copyUri"))
                         .accessibilityIdentifier("nostr.bunker.copy")
                     }
                 }
@@ -206,7 +201,6 @@ private struct BunkerQRMode: View {
     private func connect() async {
         status = .generating
         error = nil
-        copied = false
         let keys = NostrKeys.generate()
         let secret = Data.random(16).hex
         uri = BunkerSigner.nostrConnectURI(clientKeys: keys, relays: Self.relays, secret: secret, appName: app.onbCommunityName)

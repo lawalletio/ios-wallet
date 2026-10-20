@@ -9,6 +9,8 @@ struct SecurityScreen: View {
     @State private var nsec: String?
     @State private var confirmReveal = false
     @State private var confirmRemove = false
+    @State private var confirmDelete = false
+    @State private var deleting = false
     private var s: String { "settings.securityScreen" }
 
     var body: some View {
@@ -50,6 +52,16 @@ struct SecurityScreen: View {
                     .buttonStyle(.lw(.destructive))
                     .accessibilityIdentifier("security.removeDevice")
             }
+
+            SettingsSection(t("ios.security.deleteTitle")) {
+                Button { confirmDelete = true } label: {
+                    Label { Text(t(deleting ? "ios.security.deleting" : "ios.security.deleteAccount")) } icon: { Icon("trash-2", size: 16) }
+                }
+                .buttonStyle(.lw(.outline))
+                .disabled(deleting)
+                .accessibilityIdentifier("security.deleteAccount")
+                Text(t("ios.security.deleteHint")).font(LW.font(13)).foregroundStyle(LW.muted).padding(.horizontal, 6)
+            }
         }
         .alert(t("\(s).revealSecret"), isPresented: $confirmReveal) {
             Button(t("common.cancel"), role: .cancel) {}
@@ -59,6 +71,26 @@ struct SecurityScreen: View {
             Button(t("common.cancel"), role: .cancel) {}
             Button(t("\(s).removeDevice"), role: .destructive) { app.logout() }
         } message: { Text(t("\(s).removeConfirm")) }
+        .alert(t("ios.security.deleteTitle"), isPresented: $confirmDelete) {
+            Button(t("common.cancel"), role: .cancel) {}
+            Button(t("ios.security.deleteAccount"), role: .destructive) { Task { await deleteAccount() } }
+        } message: { Text(t("ios.security.deleteConfirm", ["host": host])) }
+    }
+
+    private var host: String { app.instanceURL.host() ?? app.instanceURL.absoluteString }
+
+    private func deleteAccount() async {
+        deleting = true
+        defer { deleting = false }
+        do {
+            try await app.api.deleteAccount()
+            app.logout()
+            app.show(.success, t("ios.security.deleted"))
+        } catch let error as APIError where error.status == 404 || error.status == 405 {
+            app.show(.error, t("ios.security.deleteUnsupported", ["host": host]))
+        } catch {
+            app.show(.error, t("ios.security.deleteFailed", ["error": error.localizedDescription]))
+        }
     }
 
     private var roleLabel: String {
@@ -79,8 +111,7 @@ struct SecurityScreen: View {
     }
 
     private func copyNpub(_ pk: String) {
-        UIPasteboard.general.string = NIP19.npub(pk)
-        Haptics.tap()
+        Clipboard.copy(NIP19.npub(pk))
         app.show(.success, t("\(s).npubCopied"))
     }
 
@@ -102,7 +133,6 @@ struct SecretKeyReveal: View {
     let nsec: String
     @Environment(AppModel.self) private var app
     @State private var revealed = false
-    @State private var copied = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -122,14 +152,9 @@ struct SecretKeyReveal: View {
             .padding(.leading, 14).padding(.trailing, 4).padding(.vertical, 8)
             .lwInset()
 
-            Button {
-                // Local-only, auto-expiring clipboard item: the key must not sync via Universal Clipboard or linger.
-                UIPasteboard.general.setItems([[UTType.plainText.identifier: nsec]],
-                                              options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(120)])
-                copied = true
-                app.show(.success, t("auth.keyCopied"))
-                Task { try? await Task.sleep(for: .seconds(2)); copied = false }
-            } label: { Label { Text(copied ? t("common.copied") : t("auth.copyKey")) } icon: { Icon(copied ? "check" : "copy", size: 16) } }
+            CopyButton(value: nsec, secret: true, onCopy: { app.show(.success, t("auth.keyCopied")) }) {
+                CopyLabel(copied: $0, title: t("auth.copyKey"))
+            }
                 .buttonStyle(.lw(.secondary, height: 46))
                 .accessibilityIdentifier("security.copyNsec")
         }
@@ -164,7 +189,7 @@ struct PasskeysSection: View {
             }
             .lwSurface(LW.Radius.surface - 4)
 
-            if PasskeyService.isSupported {
+            if PasskeyService.isSupported(app) {
                 Button { Task { await add() } } label: {
                     HStack(spacing: 8) {
                         if adding { ProgressView().controlSize(.small) } else { Icon("plus", size: 16) }
@@ -303,7 +328,6 @@ struct ConnectedAppsSection: View {
     @State private var error: String?
     @State private var target: OAuthGrant?
     @State private var revoking = false
-    @State private var copied = false
     private let a = "ios.set.apps"
 
     var body: some View {
@@ -321,12 +345,7 @@ struct ConnectedAppsSection: View {
                 HStack(spacing: 8) {
                     Text(mcpURL).font(.system(size: 13, design: .monospaced)).foregroundStyle(LW.foreground.opacity(0.9))
                         .lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
-                    Button {
-                        UIPasteboard.general.string = mcpURL
-                        copied = true
-                        Haptics.tap()
-                        Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
-                    } label: {
+                    CopyButton(value: mcpURL) { copied in
                         Icon(copied ? "check" : "copy", size: 15).foregroundStyle(copied ? LW.incoming : LW.muted)
                             .frame(width: 36, height: 36).contentShape(Circle())
                     }

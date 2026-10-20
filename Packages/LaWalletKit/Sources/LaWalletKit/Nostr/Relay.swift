@@ -19,6 +19,8 @@ public actor Relay {
         let filters: [JSONValue]
         let cont: AsyncStream<NostrEvent>.Continuation
         let finishOnEOSE: Bool
+        /// Newest `created_at` delivered, so a reconnect resumes from there instead of replaying the whole window.
+        var latest: Int?
     }
 
     private static let registry = Registry()
@@ -44,7 +46,7 @@ public actor Relay {
         if failed { return dropped(t) }
         isOpen = true
         retry = 1
-        for (id, sub) in subs { sendRaw(.array(["REQ", .string(id)] + sub.filters)) }
+        for (id, sub) in subs { sendRaw(.array(["REQ", .string(id)] + Self.resumed(sub.filters, after: sub.latest))) }
         for (_, w) in waiters { w.resume(returning: true) }
         waiters.removeAll()
     }
@@ -75,6 +77,17 @@ public actor Relay {
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             await self?.reopenIfNeeded()
+        }
+    }
+
+    /// Live filters with `since` moved up to the newest event already seen (inclusive: same-second events re-arrive and
+    /// are deduped by the consumer, none are lost).
+    static func resumed(_ filters: [JSONValue], after latest: Int?) -> [JSONValue] {
+        guard let latest else { return filters }
+        return filters.map { filter in
+            guard case .object(var o) = filter else { return filter }
+            o["since"] = .number(Double(max(latest, Int(o["since"]?.double ?? 0))))
+            return .object(o)
         }
     }
 
@@ -110,8 +123,12 @@ public actor Relay {
               let id = msg[1].string else { return }
         switch type {
         case "EVENT":
-            guard msg.count >= 3, let ev = try? msg[2].decode(NostrEvent.self), ev.isValid else { return }
-            subs[id]?.cont.yield(ev)
+            guard msg.count >= 3, let ev = try? msg[2].decode(NostrEvent.self), ev.isValid, var sub = subs[id] else { return }
+            if !sub.finishOnEOSE, ev.created_at > sub.latest ?? 0 {
+                sub.latest = ev.created_at
+                subs[id] = sub
+            }
+            sub.cont.yield(ev)
         case "EOSE":
             if subs[id]?.finishOnEOSE == true { subs.removeValue(forKey: id)?.cont.finish(); sendRaw(["CLOSE", .string(id)]) }
         case "OK":
@@ -125,7 +142,12 @@ public actor Relay {
 
     private func sendRaw(_ value: JSONValue) {
         guard let task, let data = try? value.data(), let s = String(data: data, encoding: .utf8) else { return }
-        task.send(.string(s)) { _ in }
+        // A socket the OS killed while suspended still looks open until something is sent: treat a failed send as a
+        // drop so pending publishes fail fast and the socket reconnects, instead of waiting out the OK timeout.
+        task.send(.string(s)) { [weak self] error in
+            guard error != nil else { return }
+            Task { await self?.dropped(task) }
+        }
     }
 
     // MARK: API

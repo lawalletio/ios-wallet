@@ -1,0 +1,1 @@
+Your community Lightning wallet: a Lightning address, a Nostr identity and instant bitcoin payments, with tap-to-pay Bolt Cards.

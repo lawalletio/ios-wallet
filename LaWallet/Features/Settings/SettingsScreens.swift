@@ -122,7 +122,7 @@ struct SettingsIconTile: View {
     }
 }
 
-/// `NavRow` with a brand-tinted icon tile (the main Settings list).
+/// Navigation row with a brand-tinted icon tile (the main Settings list).
 struct SettingsRow: View {
     let title: String
     let icon: String

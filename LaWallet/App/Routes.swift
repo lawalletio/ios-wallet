@@ -22,6 +22,14 @@ enum AuthRoute: Hashable {
     case activate(String)
 }
 
+extension NavTabbar.Tab {
+    /// Home and the settings pages carry the tab bar (web: `<NavTabbar />`); flow screens don't.
+    static func visible(for path: [Route]) -> Self? {
+        guard let top = path.last else { return .home }
+        return top.inSettings ? .settings : nil
+    }
+}
+
 extension Route {
     var inSettings: Bool {
         switch self {

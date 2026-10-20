@@ -42,8 +42,12 @@ enum PasskeyError: LocalizedError, Equatable {
 final class PasskeyService {
     static let shared = PasskeyService()
 
-    /// PRF needs iOS 18+ (the deployment target) and a platform authenticator.
-    static var isSupported: Bool { true }
+    /// `webcredentials:` domains in the entitlements (project.yml). iOS only runs a WebAuthn ceremony for an RP the app
+    /// is associated with, so on any other instance the passkey buttons would always fail; `LogicTests` keeps this in sync.
+    static let associatedDomains: Set<String> = ["beta.lawallet.io"]
+
+    /// PRF needs iOS 18+ (the deployment target), a platform authenticator, and an associated RP (the endpoint host).
+    static func isSupported(_ app: AppModel) -> Bool { associatedDomains.contains(app.endpoint.host() ?? "") }
 
     /// Signup: registers a passkey, derives the nsec from its PRF output and signs in (`login(keys:method:.passkey)`).
     func createAccount(app: AppModel) async throws {

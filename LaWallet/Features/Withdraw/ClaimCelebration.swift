@@ -17,6 +17,7 @@ struct ClaimCelebration: View {
     @State private var locked: (before: Int?, after: Int?)?
     @State private var opened = false
     @State private var landed = false
+    @State private var runTask: Task<Void, Never>?
     @State private var counted = 0.0
     @State private var wobble = false
 
@@ -107,22 +108,23 @@ struct ClaimCelebration: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { wobble = true }
+        .onDisappear { runTask?.cancel() }
         .onChange(of: charging, initial: true) { _, isCharging in
             guard !isCharging, locked == nil else { return }
             locked = Self.balances(snapshot: snapshot, live: liveBalance, amount: amountSats, settled: settled)
-            Task { await run() }
+            runTask = Task { await run() }
         }
     }
 
     /// Chest opens ~1.2 s in, the count runs ~2.4 s, then lands with a haptic.
     private func run() async {
         guard !reduced else { landed = true; Haptics.success(); return }
-        try? await Task.sleep(for: .seconds(1.2))
+        do { try await Task.sleep(for: .seconds(1.2)) } catch { return }
         withAnimation(.easeOut(duration: 0.5)) { opened = true }
         // ~2.4 s ease-out count, written per frame like the web's rAF loop.
         let steps = 60
         for i in 1...steps {
-            try? await Task.sleep(for: .milliseconds(40))
+            do { try await Task.sleep(for: .milliseconds(40)) } catch { return }
             let p = Double(i) / Double(steps)
             counted = Double(amountSats) * (1 - pow(1 - p, 3))
         }

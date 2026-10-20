@@ -171,6 +171,10 @@ public actor NWCClient {
     }
 
     /// Raw NIP-47 request → `result` object. Throws `NWCError.wallet` on an `error` response.
+    /// Reads may be re-sent once if the socket turns out dead; payments and invoices never are (a request that reached
+    /// the wallet before the drop must not run twice).
+    private static let idempotent: Set<String> = ["get_info", "get_balance", "lookup_invoice", "list_transactions"]
+
     public func request(_ method: String, _ params: JSONValue, timeout: Duration = .seconds(45)) async throws -> JSONValue {
         let nip44 = await infoEvent().encryptions.contains("nip44_v2")
         let body = try JSONValue.object(["method": .string(method), "params": params]).data()
@@ -179,7 +183,9 @@ public actor NWCClient {
         let ev = try NostrEvent.sign(UnsignedEvent(kind: 23194, tags: tags, content: encrypt(String(decoding: body, as: UTF8.self), nip44: nip44)), with: keys)
         let relay = await Relay.shared(relayURL)
         let stream = await relay.subscribe([["kinds": [23195], "authors": [.string(connection.walletPubkey)], "#e": [.string(ev.id)]]])
-        try await relay.publish(ev)
+        do { try await relay.publish(ev) } catch RelayError.notConnected where Self.idempotent.contains(method) {
+            try await relay.publish(ev)
+        }
         let wallet = connection.walletPubkey
         let response: NostrEvent = try await withTimeout(timeout) {
             for await r in stream where r.pubkey == wallet && r.tag("e") == ev.id { return r }

@@ -113,15 +113,45 @@ struct AmbientBackground: View {
     var flareAt: Date?
     @Environment(\.theme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var phase
+    @State private var onScreen = false
+    @State private var flaring = false
+    @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+
+    static let flareDuration: Double = 2.4
+
+    enum FrameRate: Equatable { case paused, drift, display }
+
+    /// How often to redraw. The drift moves ~1.5 pt/s, so 8 fps is indistinguishable from 60 and costs a fraction;
+    /// only the payment bloom needs display rate. Hidden screens (under a push, app in background), Low Power Mode and
+    /// Reduce Motion hold a still frame.
+    nonisolated static func frameRate(onScreen: Bool, active: Bool, flaring: Bool, reduceMotion: Bool, lowPower: Bool) -> FrameRate {
+        guard onScreen, active else { return .paused }
+        if flaring { return .display }
+        return reduceMotion || lowPower ? .paused : .drift
+    }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 24, paused: reduceMotion && flareAt == nil)) { context in
+        let rate = Self.frameRate(onScreen: onScreen, active: phase == .active, flaring: flaring, reduceMotion: reduceMotion,
+                                  lowPower: lowPower)
+        TimelineView(.animation(minimumInterval: rate == .drift ? 1.0 / 8 : nil, paused: rate == .paused)) { context in
             Canvas(opaque: true, rendersAsynchronously: true) { ctx, size in
                 draw(ctx, size: size, time: reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate, now: context.date)
             }
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange).receive(on: RunLoop.main)) { _ in
+            lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+        .task(id: flareAt) {
+            guard let flareAt, Date().timeIntervalSince(flareAt) < Self.flareDuration else { return }
+            flaring = true
+            try? await Task.sleep(for: .seconds(Self.flareDuration))
+            flaring = false
+        }
     }
 
     private func draw(_ ctx: GraphicsContext, size: CGSize, time t: Double, now: Date) {
@@ -147,8 +177,8 @@ struct AmbientBackground: View {
         // Payment bloom behind the balance: rises fast, fades over ~2.4 s.
         if let flare, let flareAt {
             let age = now.timeIntervalSince(flareAt)
-            if age >= 0, age < 2.4 {
-                let p = age / 2.4
+            if age >= 0, age < Self.flareDuration {
+                let p = age / Self.flareDuration
                 let strength = sin(min(1, p * 2.2) * .pi / 2) * (1 - p)
                 glow(flare == .incoming ? LW.incoming : LW.coral, 0.5, 0.22, 0.30 + 0.25 * p, 0.45 * strength)
             }

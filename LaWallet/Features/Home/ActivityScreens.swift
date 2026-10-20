@@ -4,11 +4,10 @@ import SwiftUI
 /// `/wallet/activity` — full NWC history grouped by day, infinite scroll.
 struct ActivityScreen: View {
     @Environment(AppModel.self) private var app
-    @State private var filter = 0
 
     var body: some View {
         let w = app.wallet
-        let items = w.transactions.filter { filter == 0 || $0.tx.description.lowercased().contains("transfer") }
+        let items = w.transactions
         let groups = Dictionary(grouping: items) { Calendar.current.startOfDay(for: $0.date) }.sorted { $0.key > $1.key }
         VStack(spacing: 0) {
             ScreenHeader(title: t("activity.title"))
@@ -26,15 +25,7 @@ struct ActivityScreen: View {
                     ForEach(groups, id: \.key) { day, txs in
                         VStack(alignment: .leading, spacing: 8) {
                             Text(dayLabel(day)).font(LW.font(15, .semibold)).foregroundStyle(LW.muted).padding(.leading, 6)
-                            VStack(spacing: 0) {
-                                ForEach(Array(txs.enumerated()), id: \.element.id) { i, tx in
-                                    Button { app.navigate(.activityDetail(tx)) } label: { TransactionRowView(tx: tx) }
-                                        .accessibilityIdentifier("activity.row")
-                                    if i < txs.count - 1 { RowDivider().padding(.leading, 56) }
-                                }
-                            }
-                            .padding(.vertical, 4)
-                            .lwSurface()
+                            TransactionList(items: txs, rowID: "activity.row")
                         }
                     }
                     if w.hasMore && !items.isEmpty {

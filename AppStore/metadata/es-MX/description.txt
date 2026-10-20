@@ -1,0 +1,31 @@
+LaWallet te da una dirección Lightning, una identidad Nostr y una billetera de bitcoin en una sola app, administrada por tu comunidad.
+
+Cobrá con una dirección tan simple como un email — vos@tucomunidad — y pagale a cualquiera en la red Lightning en segundos.
+
+ENVIAR Y RECIBIR
+• Pagá direcciones Lightning, LNURL y facturas deslizando
+• Recibí en tu dirección o con una factura por un monto
+• Escaneá cualquier QR Lightning, incluidos los links de retiro para reclamar sats
+• Contactos guardados y sugerencias de destinatario
+• Saldo y actividad en vivo, con aviso cuando llega un pago
+
+TUS CLAVES, TU IDENTIDAD
+• Creá una cuenta en segundos con una passkey o una nueva clave Nostr
+• Ingresá con tu nsec, una passkey o un firmante remoto (bunker NIP-46)
+• Respaldá tu clave secreta cuando quieras; nunca sale de tu dispositivo
+
+BOLT CARDS
+• Activá una tarjeta de tu comunidad escaneando su QR
+• Acercá una tarjeta a tu iPhone para reclamar o pagar
+• Administrá tus tarjetas y elegí desde qué billetera gastan
+
+USÁ TU PROPIA BILLETERA
+• Conectá cualquier billetera Nostr Wallet Connect (NWC)
+• Reenviá pagos entrantes y enviá notificaciones por webhook o Nostr
+
+HECHA PARA COMUNIDADES
+• Funciona con cualquier comunidad LaWallet: cambiá de instancia en Ajustes
+• Montos en sats, BTC o tu moneda local
+• Español e inglés
+
+LaWallet es código abierto (github.com/lawalletio). No muestra publicidad ni te rastrea.

@@ -104,7 +104,7 @@ struct ReceiveAmountScreen: View {
                     .disabled(loading)
                     .accessibilityIdentifier("receive.amount.note")
                 Button { Task { await create(sats) } } label: {
-                    PayButtonLabel(busy: loading, title: t("common.continue"), busyTitle: t("receive.creatingInvoice"), icon: "arrow-right")
+                    BusyLabel(t("common.continue"), busy: loading, busyTitle: t("receive.creatingInvoice"), icon: "arrow-right")
                 }
                 .buttonStyle(.lw(.primary))
                 .disabled(sats == nil || loading || (!app.wallet.hasWallet && !autoCreate))
@@ -147,7 +147,6 @@ struct ReceiveInvoiceScreen: View {
     @Environment(AppModel.self) private var app
     @State private var nfc: NFCPhase = .idle
     @State private var settled = false
-    @State private var copied = false
 
     var body: some View {
         if let inv = app.flows.invoice {
@@ -213,15 +212,7 @@ struct ReceiveInvoiceScreen: View {
             Text(preview).font(LW.font(15, .medium)).foregroundStyle(LW.foreground.opacity(0.85))
             GlassGroup(spacing: 10) {
                 HStack(spacing: 10) {
-                    Button {
-                        UIPasteboard.general.string = inv.bolt11
-                        copied = true
-                        Haptics.tap()
-                        app.show(.success, t("common.copied"))
-                        Task { try? await Task.sleep(for: .seconds(1.5)); copied = false }
-                    } label: {
-                        Label { Text(copied ? t("common.copied") : t("common.copy")) } icon: { Icon(copied ? "check" : "copy", size: 16) }
-                    }
+                    CopyButton(value: inv.bolt11, onCopy: { app.show(.success, t("common.copied")) }) { CopyLabel(copied: $0) }
                     .buttonStyle(.lw(.secondary, height: 46))
                     .accessibilityIdentifier("receive.invoice.copy")
                     ShareLink(item: inv.bolt11) {
@@ -258,16 +249,13 @@ struct ReceiveInvoiceScreen: View {
     }
 
     private func statusPill(waiting: Bool, expiry: String?) -> some View {
-        HStack(spacing: 8) {
+        StatusPill {
             PulseDot()
             if waiting { Text(t("receive.waitingPayment")).foregroundStyle(LW.foreground.opacity(0.9)) }
             if waiting && expiry != nil { Text(verbatim: "·") }
             if let expiry { Text(expiry).monospacedDigit() }
         }
-        .font(LW.font(13, .medium)).foregroundStyle(LW.muted)
-        .padding(.horizontal, 14).padding(.vertical, 9)
-        .lwGlass(in: Capsule())
-        .accessibilityElement(children: .combine)
+        .foregroundStyle(LW.muted)
     }
 
     static func clock(_ seconds: Int) -> String {
