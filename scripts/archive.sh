@@ -5,7 +5,7 @@
 #   DEVELOPMENT_TEAM=ABCDE12345 scripts/archive.sh --upload   # → straight to App Store Connect / TestFlight
 #
 # The team can also come from Config/Local.xcconfig. Upload needs Xcode signed in to an account on that team
-# (Xcode → Settings → Accounts) or an App Store Connect API key (-authenticationKeyPath/-ID/-IssuerID, see README).
+# (Xcode → Settings → Accounts), or an App Store Connect API key in ASC_KEY_PATH / ASC_KEY_ID / ASC_ISSUER_ID.
 # Build number = commit count, so every archive from a new commit is accepted without manual bumps.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -15,6 +15,11 @@ ARCHIVE="$OUT/LaWallet.xcarchive"
 BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
 TEAM_ARGS=()
 [[ -n "${DEVELOPMENT_TEAM:-}" ]] && TEAM_ARGS=(DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM")
+# App Store Connect API key (CI or no Xcode account): signs, provisions and uploads without an interactive login.
+AUTH_ARGS=()
+if [[ -n "${ASC_KEY_PATH:-}" ]]; then
+  AUTH_ARGS=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+fi
 
 command -v xcodegen >/dev/null && xcodegen generate --quiet
 rm -rf "$ARCHIVE"
@@ -22,7 +27,7 @@ rm -rf "$ARCHIVE"
 xcodebuild archive \
   -project LaWallet.xcodeproj -scheme LaWallet -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" \
-  -skipPackagePluginValidation -skipMacroValidation -allowProvisioningUpdates \
+  -skipPackagePluginValidation -skipMacroValidation -allowProvisioningUpdates ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER" ${TEAM_ARGS[@]+"${TEAM_ARGS[@]}"}
 
 EXPORT_OPTIONS=Config/ExportOptions.plist
@@ -33,6 +38,6 @@ if [[ "${1:-}" == "--upload" ]]; then
 fi
 
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$OUT" \
-  -exportOptionsPlist "$EXPORT_OPTIONS" -allowProvisioningUpdates
+  -exportOptionsPlist "$EXPORT_OPTIONS" -allowProvisioningUpdates ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"}
 
 echo "LaWallet $(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$ARCHIVE/Info.plist") ($BUILD_NUMBER) → $OUT"

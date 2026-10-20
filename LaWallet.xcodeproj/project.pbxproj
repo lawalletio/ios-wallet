@@ -498,7 +498,6 @@
 					};
 					EAB95D430802A7DF22ED88B0 = {
 						DevelopmentTeam = "";
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -907,7 +906,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = LaWallet/LaWallet.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
 				INFOPLIST_FILE = LaWallet/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -915,6 +915,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.lawallet.wallet;
+				PROVISIONING_PROFILE_SPECIFIER = "LaWallet App Store";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
