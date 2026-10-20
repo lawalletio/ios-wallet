@@ -65,7 +65,8 @@ device.
   Purchase. **Paid Registration is OFF on beta.lawallet.io** (Admin → Settings → Wallet, turned off 2026-10-20) so the
   reviewer only sees free usernames. Keep it off while a build is in review. Other instances that charge still show the
   paid flow in the app.
-- **Demo account.** Put a funded nsec in App Store Connect → App Review Information, never in this repo. Review notes:
+- **Demo account.** None needed: every signup gets its own wallet, so "Sign-in required" stays off. If you ever add one,
+  put the nsec in App Store Connect → App Review Information, never in this repo. Review notes:
   `metadata/review_information/notes.txt`.
 - **NFC.** The reviewer has no Bolt Card. The notes explain that the card features need one, and every other flow
   works without it.
