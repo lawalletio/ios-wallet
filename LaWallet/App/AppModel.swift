@@ -156,8 +156,9 @@ final class AppModel {
     }
 
     /// Signs in with a local key (`nsec` or passkey-derived). Creates the account on first `/me`.
-    func login(keys: NostrKeys, method: LoginMethod) async throws {
-        try await login(signer: LocalSigner(keys: keys), pubkey: keys.publicKey, method: method) {
+    /// `loadMe: false` defers that first `/me` (a RECOVER claim creates the account without the courtesy LNCurl wallet).
+    func login(keys: NostrKeys, method: LoginMethod, loadMe: Bool = true) async throws {
+        try await login(signer: LocalSigner(keys: keys), pubkey: keys.publicKey, method: method, loadMe: loadMe) {
             Keychain.set(keys.secret.hex, for: "signer-secret")
         }
     }
@@ -169,7 +170,7 @@ final class AppModel {
         }
     }
 
-    private func login(signer s: any NostrSigner, pubkey pk: String, method: LoginMethod, persist: () -> Void) async throws {
+    private func login(signer s: any NostrSigner, pubkey pk: String, method: LoginMethod, loadMe: Bool = true, persist: () -> Void) async throws {
         // Mint first: flipping `signer` swaps RootView to the signed-in tree, so only do it once auth succeeded.
         let token = try await LaWalletAPI(http: HTTPClient(baseURL: endpoint)).mintJWT(signer: s).token
         signer = s
@@ -181,7 +182,7 @@ final class AppModel {
         if let r = Self.jwtClaims(token)?["role"]?.string { role = r }
         persist()
         Keychain.set(method.rawValue, for: "login-method")
-        await refreshMe()
+        if loadMe { await refreshMe() }
         if !Self.isUITest { Notifier.requestAuthorization() }
     }
 

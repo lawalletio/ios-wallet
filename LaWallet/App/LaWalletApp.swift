@@ -89,7 +89,10 @@ struct RootView: View {
 
 struct AuthenticatedRoot: View {
     @Environment(AppModel.self) private var app
+    /// The account-transfer notice acked this load (hidden right away; `/me` stops returning it after the dismiss).
+    @State private var dismissedTransfer: String?
     private var tab: NavTabbar.Tab? { .visible(for: app.path) }
+    private var transfer: AccountTransfer? { app.me?.accountTransfer.flatMap { $0.id == dismissedTransfer ? nil : $0 } }
 
     var body: some View {
         @Bindable var app = app
@@ -109,6 +112,12 @@ struct AuthenticatedRoot: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.86), value: tab)
+        // Old owner after a card recovery moved the account away: must be acknowledged, not swiped off.
+        .sheet(item: Binding(get: { transfer }, set: { _ in })) { notice in
+            AccountTransferSheet(transfer: notice) { dismissedTransfer = notice.id }
+                .presentationDetents([.large])
+                .interactiveDismissDisabled()
+        }
         .task(id: app.isAuthenticated) {
             // Resume a card activation that started while signed out (1 h TTL).
             if let pending = app.pendingActivation, Date().timeIntervalSince(pending.at) < 3600 {
