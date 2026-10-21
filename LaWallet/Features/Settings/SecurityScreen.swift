@@ -32,6 +32,10 @@ struct SecurityScreen: View {
 
             SettingsSection(t("\(s).passkeys")) { PasskeysSection() }
             SettingsSection(t("\(s).connectedApps")) { ConnectedAppsSection() }
+            // Older servers don't send `cardRecoveryEnabled`: no toggle then.
+            if let enabled = app.me?.cardRecoveryEnabled {
+                SettingsSection(t("\(s).cardRecovery.title")) { CardRecoverySection(serverValue: enabled) }
+            }
 
             if app.loginMethod == .nsec || app.loginMethod == .passkey {
                 SettingsSection(t("\(s).secretKey")) {
@@ -160,6 +164,49 @@ struct SecretKeyReveal: View {
         }
         .padding(12)
         .lwSurface(LW.Radius.surface - 4)
+    }
+}
+
+// MARK: card recovery (settings/card-recovery-section.tsx)
+
+/// Owner opt-out: when on, anyone holding one of this account's cards can move it to a new key. Optimistic, rolled back on failure.
+struct CardRecoverySection: View {
+    let serverValue: Bool
+    @Environment(AppModel.self) private var app
+    @Environment(\.theme) private var theme
+    @State private var pending: Bool?
+    private let c = "settings.securityScreen.cardRecovery"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 14) {
+                SettingsIconTile(icon: "life-buoy", color: LW.mint)
+                Text(t("\(c).toggle")).font(LW.font(16, .medium)).foregroundStyle(LW.foreground)
+                Spacer(minLength: 8)
+                Toggle("", isOn: Binding(get: { pending ?? serverValue }, set: { next in Task { await toggle(next) } }))
+                    .labelsHidden()
+                    .tint(theme.preset.primary)
+                    .disabled(pending != nil)
+                    .accessibilityLabel(t("\(c).toggle"))
+                    .accessibilityIdentifier("security.cardRecovery")
+            }
+            .padding(.leading, 18).padding(.trailing, 14).frame(minHeight: 58)
+            .lwSurface(LW.Radius.surface - 4)
+            Text(t("\(c).hint")).font(LW.font(13)).foregroundStyle(LW.muted).padding(.horizontal, 6)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func toggle(_ next: Bool) async {
+        pending = next
+        defer { pending = nil }
+        do {
+            _ = try await app.api.setCardRecovery(enabled: next)
+            await app.refreshMe()
+            app.show(.success, t(next ? "\(c).enabled" : "\(c).disabled"))
+        } catch {
+            app.show(.error, t("\(c).failed"))
+        }
     }
 }
 
