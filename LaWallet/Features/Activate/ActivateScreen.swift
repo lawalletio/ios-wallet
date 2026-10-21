@@ -54,7 +54,7 @@ struct ActivateScreen: View {
                     mergeCheck = nil
                     runRecover(confirmMerge: true)
                 }, onCancel: { mergeCheck = nil })
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
             }
         }
     }
