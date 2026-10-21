@@ -40,12 +40,26 @@ public struct CurrentUser: Codable, Sendable, Equatable {
     public let primaryUsername: String?
     public let primaryRedirect: String?
     public let currencyPrefs: CurrencyPrefs?
+    /// Nil on servers that predate card recovery (hide the Security toggle).
+    public let cardRecoveryEnabled: Bool?
+    /// Set when a card recovery moved this account to another key, until dismissed.
+    public let accountTransfer: AccountTransfer?
 
     /// `effectiveNwcString || nwcString`, nil when the user has no wallet yet.
     public var nwc: String? {
         if let e = effectiveNwcString, !e.isEmpty { return e }
         return nwcString.isEmpty ? nil : nwcString
     }
+}
+
+/// `accountTransfer` on `/api/users/me`: what a card recovery took from this (old) account.
+public struct AccountTransfer: Codable, Sendable, Equatable, Identifiable {
+    public let id: String
+    public let transferredAt: String
+    public let cardTitle: String?
+    public let lightningAddresses: [String]
+    public let cards: Int
+    public let remoteWallets: Int
 }
 
 public struct JWTToken: Decodable, Sendable {
@@ -92,8 +106,60 @@ public struct ActivationPreview: Codable, Sendable, Equatable {
     }
     public let tokenId: String
     public let qrKind: String
+    /// `ACTIVATE` | `RECOVER`; missing on older servers (= activate). Never trust the URL's `?tag`.
+    public let purpose: String?
     public let status: String
     public let card: PreviewCard
+    public var isRecover: Bool { purpose == "RECOVER" }
+}
+
+/// `GET /api/activation-tokens/:id/recovery-check` — pre-flight before a RECOVER claim.
+public struct RecoveryCheck: Decodable, Sendable, Equatable {
+    public struct Side: Decodable, Sendable, Equatable {
+        /// Full `user@domain`.
+        public let lightningAddresses: [String]
+        public let cards: Int
+        public let remoteWallets: Int
+    }
+    public let sameAccount: Bool
+    public let mergeRequired: Bool
+    public let existing: Side
+    public let incoming: Side
+}
+
+/// `POST /api/activation-tokens/:id/claim` on a RECOVER token.
+public struct RecoveryClaim: Decodable, Sendable, Equatable {
+    public let outcome: String
+    public let recovery: RecoveredAccount?
+    public let needsLightningAddress: Bool?
+
+    /// What came over, or nil when the card was already the caller's (`same-account`: just open the wallet).
+    public var recovered: RecoveredAccount? { outcome == "same-account" ? nil : recovery }
+}
+
+public struct RecoveredAccount: Decodable, Sendable, Equatable {
+    public struct RecoveredCard: Decodable, Sendable, Equatable, Identifiable {
+        public let id: String
+        public let title: String?
+        public let designImageUrl: String?
+    }
+    public struct RecoveredWallet: Decodable, Sendable, Equatable, Identifiable {
+        public let id: String
+        public let name: String
+        public let isDefault: Bool
+    }
+    public let lightningAddresses: [String]
+    public let primaryAddress: String?
+    public let cards: [RecoveredCard]
+    public let remoteWallets: [RecoveredWallet]
+    public let vouchers: Int
+    public let mergedIntoExisting: Bool
+
+    /// Sum of the balances that loaded (nil = still loading or failed); nil when none did.
+    public static func total(_ balances: [Int?]) -> Int? {
+        let known = balances.compactMap { $0 }
+        return known.isEmpty ? nil : known.reduce(0, +)
+    }
 }
 
 public struct ActivationClaim: Decodable, Sendable, Equatable {

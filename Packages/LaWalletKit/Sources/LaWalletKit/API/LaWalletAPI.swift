@@ -50,6 +50,16 @@ public struct LaWalletAPI: Sendable {
         _ = try await http.send("PUT", "/api/users/me/currency-prefs", json: Body(currencyPrefs: prefs), as: JSONValue.self)
     }
 
+    public func setCardRecovery(enabled: Bool) async throws -> Bool {
+        struct R: Decodable { let cardRecoveryEnabled: Bool }
+        return try await http.send("PUT", "/api/users/me/card-recovery", json: ["enabled": enabled], as: R.self).cardRecoveryEnabled
+    }
+
+    /// Idempotent ack of `me.accountTransfer`.
+    public func dismissAccountTransfer() async throws {
+        _ = try await http.send("POST", "/api/users/me/account-transfer/dismiss", as: JSONValue.self)
+    }
+
     public func profiles(_ pubkeys: [String]) async throws -> [NostrProfile] {
         struct R: Decodable { let profiles: [NostrProfile] }
         return try await http.send("POST", "/api/nostr/profiles", json: ["pubkeys": pubkeys], as: R.self).profiles
@@ -105,10 +115,25 @@ public struct LaWalletAPI: Sendable {
         try await http.send("POST", path("/api/activation-tokens", tokenId, "claim"), json: ["remoteWalletId": JSONValue.null])
     }
 
+    public func recoveryCheck(_ tokenId: String) async throws -> RecoveryCheck {
+        try await http.get(path("/api/activation-tokens", tokenId, "recovery-check"))
+    }
+
+    /// RECOVER claim. Throws 409 with `reason == "RECOVERY_MERGE_REQUIRED"` when the caller has data and didn't confirm.
+    public func claimRecovery(_ tokenId: String, confirmMerge: Bool) async throws -> RecoveryClaim {
+        try await http.send("POST", path("/api/activation-tokens", tokenId, "claim"),
+                            json: ["remoteWalletId": JSONValue.null, "confirmMerge": .bool(confirmMerge)])
+    }
+
     // MARK: remote wallets
 
     public func remoteWallets() async throws -> [RemoteWallet] { try await http.get("/api/remote-wallets") }
     public func remoteWallet(_ id: String) async throws -> RemoteWallet { try await http.get(path("/api/remote-wallets", id)) }
+
+    public func remoteWalletBalance(_ id: String) async throws -> Int {
+        struct R: Decodable { let balanceSats: Double }
+        return Int(try await http.get(path("/api/remote-wallets", id, "balance"), as: R.self).balanceSats)
+    }
 
     public func createNWCWallet(name: String, connectionString: String, sendReceive: Bool, isDefault: Bool) async throws -> RemoteWallet {
         let body: JSONValue = ["name": .string(name), "type": "NWC", "isDefault": .bool(isDefault),

@@ -5,12 +5,16 @@ public struct APIError: Error, LocalizedError, Equatable {
     public let status: Int
     public let message: String
     public let code: String?
+    /// `error.details`, e.g. `{ reason: "RECOVERY_MERGE_REQUIRED" }` on a 409.
+    public let details: JSONValue?
     public var errorDescription: String? { message }
+    public var reason: String? { details?["reason"]?.string }
 
-    public init(status: Int, message: String, code: String? = nil) {
+    public init(status: Int, message: String, code: String? = nil, details: JSONValue? = nil) {
         self.status = status
         self.message = message
         self.code = code
+        self.details = details
     }
 }
 
@@ -70,7 +74,7 @@ public final class HTTPClient: Sendable {
             let env = try? JSONValue.parse(data)
             let message = env?["error"]?["message"]?.string ?? env?["error"]?.string ?? env?["message"]?.string ?? Self.defaultMessage(status)
             if status == 401 { onUnauthorized?() }
-            throw APIError(status: status, message: message, code: env?["error"]?["code"]?.string)
+            throw APIError(status: status, message: message, code: env?["error"]?["code"]?.string, details: env?["error"]?["details"])
         }
         return (data, status)
     }

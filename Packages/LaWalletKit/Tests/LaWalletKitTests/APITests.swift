@@ -54,6 +54,98 @@ final class APITests: XCTestCase {
         try await api(body: "{}").deleteAddress("a b/c")
         XCTAssertEqual(StubProtocol.lastRequest?.url?.absoluteString, "https://beta.lawallet.io/api/wallet/addresses/a%20b%2Fc")
     }
+
+    // MARK: card recovery
+
+    private static let meJSON = #"{"userId":"u1","lightningAddress":null,"nwcString":"","nwcUpdatedAt":null,"effectiveNwcString":null,"primaryAddressMode":null,"primaryUsername":null,"primaryRedirect":null"#
+
+    func testPreviewDecodesPurposeAndDefaultsToActivate() async throws {
+        let card = #""card":{"id":"c1","title":null,"kind":"SIMPLE","design":{"id":"d","imageUrl":"/x.png","description":""}}"#
+        let recover = try await api(body: #"{"tokenId":"t1","qrKind":"ONE_TIME","purpose":"RECOVER","status":"PENDING",\#(card)}"#).activationPreview("t1")
+        XCTAssertTrue(recover.isRecover)
+        let legacy = try await api(body: #"{"tokenId":"t1","qrKind":"ONE_TIME","status":"PENDING",\#(card)}"#).activationPreview("t1")
+        XCTAssertNil(legacy.purpose)
+        XCTAssertFalse(legacy.isRecover)
+    }
+
+    func testRecoveryCheckGetsAndDecodes() async throws {
+        let check = try await api(body: #"{"sameAccount":false,"mergeRequired":true,"existing":{"lightningAddresses":["me@x.io"],"cards":1,"remoteWallets":2},"incoming":{"lightningAddresses":[],"cards":3,"remoteWallets":0}}"#)
+            .recoveryCheck("t1")
+        let req = try XCTUnwrap(StubProtocol.lastRequest)
+        XCTAssertEqual(req.httpMethod, "GET")
+        XCTAssertEqual(req.url?.absoluteString, "https://beta.lawallet.io/api/activation-tokens/t1/recovery-check")
+        XCTAssertEqual(req.value(forHTTPHeaderField: "Authorization"), "Bearer jwt-123")
+        XCTAssertTrue(check.mergeRequired)
+        XCTAssertEqual(check.existing.lightningAddresses, ["me@x.io"])
+        XCTAssertEqual(check.incoming.cards, 3)
+    }
+
+    func testClaimRecoverySendsConfirmMergeAndDecodesRecovered() async throws {
+        let body = #"{"qrKind":"ONE_TIME","purpose":"RECOVER","outcome":"recovered","needsLightningAddress":true,"recovery":{"lightningAddresses":["a@x.io"],"primaryAddress":"a@x.io","cards":[{"id":"c1","title":null,"designImageUrl":null}],"remoteWallets":[{"id":"w1","name":"Alby","isDefault":true}],"vouchers":2,"mergedIntoExisting":true}}"#
+        let claim = try await api(body: body).claimRecovery("t1", confirmMerge: true)
+        let req = try XCTUnwrap(StubProtocol.lastRequest)
+        XCTAssertEqual(req.httpMethod, "POST")
+        XCTAssertEqual(req.url?.absoluteString, "https://beta.lawallet.io/api/activation-tokens/t1/claim")
+        XCTAssertEqual(try JSONValue.parse(XCTUnwrap(StubProtocol.lastBody)), ["remoteWalletId": .null, "confirmMerge": true])
+        let recovered = try XCTUnwrap(claim.recovered)
+        XCTAssertEqual(claim.needsLightningAddress, true)
+        XCTAssertEqual(recovered.remoteWallets.first?.name, "Alby")
+        XCTAssertEqual(recovered.vouchers, 2)
+        XCTAssertTrue(recovered.mergedIntoExisting)
+    }
+
+    func testClaimRecoverySameAccountHasNothingToShow() async throws {
+        let claim = try await api(body: #"{"qrKind":"ONE_TIME","purpose":"RECOVER","outcome":"same-account"}"#).claimRecovery("t1", confirmMerge: false)
+        XCTAssertEqual(try JSONValue.parse(XCTUnwrap(StubProtocol.lastBody)), ["remoteWalletId": .null, "confirmMerge": false])
+        XCTAssertNil(claim.recovered)
+    }
+
+    func testMergeRequiredConflictKeepsDetailsReason() async {
+        do {
+            _ = try await api(status: 409, body: #"{"success":false,"error":{"message":"Merge needed","code":"CONFLICT","details":{"reason":"RECOVERY_MERGE_REQUIRED"}}}"#)
+                .claimRecovery("t1", confirmMerge: false)
+            XCTFail("expected APIError")
+        } catch let error as APIError {
+            XCTAssertEqual(error.status, 409)
+            XCTAssertEqual(error.reason, "RECOVERY_MERGE_REQUIRED")
+        } catch { XCTFail("unexpected \(error)") }
+    }
+
+    func testMeDecodesCardRecoveryFieldsAndStillDecodesWithout() async throws {
+        let with = try await api(body: Self.meJSON + #","cardRecoveryEnabled":false,"accountTransfer":{"id":"tr1","transferredAt":"2026-10-01T12:00:00.000Z","cardTitle":null,"lightningAddresses":["old@x.io"],"cards":1,"remoteWallets":2}}"#).me()
+        XCTAssertEqual(with.cardRecoveryEnabled, false)
+        XCTAssertEqual(with.accountTransfer?.id, "tr1")
+        XCTAssertEqual(with.accountTransfer?.remoteWallets, 2)
+        let without = try await api(body: Self.meJSON + "}").me()
+        XCTAssertNil(without.cardRecoveryEnabled)
+        XCTAssertNil(without.accountTransfer)
+        let cleared = try await api(body: Self.meJSON + #","cardRecoveryEnabled":true,"accountTransfer":null}"#).me()
+        XCTAssertNil(cleared.accountTransfer)
+    }
+
+    func testSetCardRecoveryPutsEnabled() async throws {
+        let enabled = try await api(body: #"{"cardRecoveryEnabled":false}"#).setCardRecovery(enabled: false)
+        let req = try XCTUnwrap(StubProtocol.lastRequest)
+        XCTAssertEqual(req.httpMethod, "PUT")
+        XCTAssertEqual(req.url?.absoluteString, "https://beta.lawallet.io/api/users/me/card-recovery")
+        XCTAssertEqual(try JSONValue.parse(XCTUnwrap(StubProtocol.lastBody)), ["enabled": false])
+        XCTAssertFalse(enabled)
+    }
+
+    func testDismissAccountTransferPosts() async throws {
+        try await api(body: #"{"dismissed":1}"#).dismissAccountTransfer()
+        let req = try XCTUnwrap(StubProtocol.lastRequest)
+        XCTAssertEqual(req.httpMethod, "POST")
+        XCTAssertEqual(req.url?.absoluteString, "https://beta.lawallet.io/api/users/me/account-transfer/dismiss")
+    }
+
+    func testRemoteWalletBalanceAndTotal() async throws {
+        let sats = try await api(body: #"{"balanceSats":2100}"#).remoteWalletBalance("w1")
+        XCTAssertEqual(StubProtocol.lastRequest?.url?.absoluteString, "https://beta.lawallet.io/api/remote-wallets/w1/balance")
+        XCTAssertEqual(sats, 2100)
+        XCTAssertEqual(RecoveredAccount.total([sats, nil, 400]), 2500)
+        XCTAssertNil(RecoveredAccount.total([nil, nil]))
+    }
 }
 
 private final class Flag: @unchecked Sendable {
