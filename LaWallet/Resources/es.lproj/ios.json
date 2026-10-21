@@ -18,5 +18,8 @@
  "ios.scan.permission": "Permití el acceso a la cámara en Ajustes para escanear códigos QR.",
  "ios.scan.openSettings": "Abrir Ajustes",
  "ios.security.revealHint": "Quien tenga esta clave controla tu cuenta. Guardala en un lugar seguro.",
- "ios.common.error": "Algo salió mal"
+ "ios.common.error": "Algo salió mal",
+ "ios.recover.oneCard": "1 tarjeta",
+ "ios.recover.oneWallet": "1 billetera",
+ "ios.recover.oneVoucher": "1 cupón"
 }

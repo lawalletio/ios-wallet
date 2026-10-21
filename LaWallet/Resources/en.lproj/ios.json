@@ -18,5 +18,8 @@
  "ios.scan.permission": "Allow camera access in Settings to scan QR codes.",
  "ios.scan.openSettings": "Open Settings",
  "ios.security.revealHint": "Anyone with this key controls your account. Store it somewhere safe.",
- "ios.common.error": "Something went wrong"
+ "ios.common.error": "Something went wrong",
+ "ios.recover.oneCard": "1 card",
+ "ios.recover.oneWallet": "1 wallet",
+ "ios.recover.oneVoucher": "1 voucher"
 }
